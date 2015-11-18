@@ -8,7 +8,7 @@
 
     <link href="assets/css/bootstrap.css" rel="stylesheet">
     <link href="assets/css/mapael.css" rel="stylesheet">
-    <link type="text/css" rel="stylesheet" href="assets/css/shCoreDefault.css"/>
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/styles/shCoreDefault.min.css"/>
 </head>
 
 <body id="top">
@@ -110,19 +110,19 @@
     <h3>HTML</h3>
 
             <pre class="brush: xml;">&lt;div class="container"&gt;
-	&lt;div class="map"&gt;Alternative content&lt;/div&gt;
+    &lt;div class="map"&gt;Alternative content&lt;/div&gt;
 &lt;/div&gt;
             </pre>
 
     <h3>Javascript</h3>
 
-			<pre class="brush: js;">
-			$(".container").mapael({
-				map : {
-					name : "world_countries"
-				}
-			});
-			</pre>
+            <pre class="brush: js;">
+            $(".container").mapael({
+                map : {
+                    name : "world_countries"
+                }
+            });
+            </pre>
 
     <h3>Result</h3>
     <div class="map_world"><div class="map"></div></div>
@@ -417,13 +417,13 @@
                 </ul>
 
                 <p>The current zoom data can be retrieved with the data "ZoomLevel"</p>
-			<pre class="brush: js;">
+            <pre class="brush: js;">
 $(".mapContainer").data("zoomLevel");
 $(".mapContainer").data("panX");
 $(".mapContainer").data("panY");
 $(".mapContainer").data("zoomX");
 $(".mapContainer").data("zoomY");
-			</pre>
+            </pre>
 
                 <p>Here is an example of use of the "zoom" event : <a target="_blank" href="http://jsfiddle.net/neveldo/ejf9dsL9/">Zoom example</a></p>
 
@@ -453,9 +453,9 @@ $(".mapContainer").data("zoomY");
 <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
-<script type="text/javascript" src="assets/js/shCore.js"></script>
-<script type="text/javascript" src="assets/js/shBrushJScript.js"></script>
-<script type="text/javascript" src="assets/js/shBrushXml.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shCore.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shBrushJScript.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shBrushXml.min.js"></script>
 
 <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js" charset="utf-8" ></script>
 <script src="source/js/jquery.mapael.js" charset="utf-8" ></script>
