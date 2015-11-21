@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="jQuery Mapael is a jQuery plugin based on raphael.js that allows you to display dynamic vector maps. ">
 
-    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/css/mapael.css" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/styles/shCoreDefault.min.css"/>
 </head>
@@ -33,7 +33,7 @@
 <div class="container-narrow">
 
     <div class="jumbotron">
-        <h2 style="padding-top:0px;">jQuery Mapael 1.1.0 <a href="https://github.com/neveldo/jQuery-Mapael/releases/tag/1.1.0" target="_blank" class="whatsnew">Whats new ?</a></h2>
+        <h2 style="padding-top:0px;">jQuery Mapael 1.1.0  <a href="https://github.com/neveldo/jQuery-Mapael/releases/tag/1.1.0" target="_blank" class="whatsnew">Whats new ?</a></h2>
         <p class="subh2">Ease the build of pretty data visualizations on dynamic vector maps</p>
     </div>
 
@@ -70,7 +70,7 @@
 
     <hr>
 
-    <h2 id="overview"><a name="overview" class="anchor" href="#overview">#</a>Overview</h2>
+    <h2 id="overview"><a class="anchor" href="#overview">#</a>Overview</h2>
 
     <div class="friends">
         <h4>Friends</h4>
@@ -86,10 +86,10 @@
 
     <p>Mapael supports all modern browsers and Internet Explorer 9+. For older versions of IE, you can load jQuery 1.11.x and Raphael.js 2.1.2 as dependencies, most of the jQuery Mapael features should work fine.</p>
 
-    <p>To download mapael, go to the <a target="_blank" href="https://github.com/neveldo/jQuery-Mapael">GitHub repository</a>. Additional maps are stored in the repository <a target="_blank" href="https://github.com/neveldo/mapael-maps">'neveldo/mapael-maps'</a>.</p>
+    <p><a target="_blank" href="https://github.com/neveldo/jQuery-Mapael/archive/1.1.0.zip">Click here to download the lastest stable release of Mapael from GitHub</a>. Additional maps are stored in the repository <a target="_blank" href="https://github.com/neveldo/mapael-maps">'neveldo/mapael-maps'</a>.</p>
 
     <h2 id="key-features">
-        <a name="key-features" class="anchor" href="#key-features"><span class="octicon octicon-link"></span></a>Key features</h2>
+        <a class="anchor" href="#key-features"><span class="octicon octicon-link"></span></a>Key features</h2>
 
     <ul>
         <li>  based on <strong>jQuery and raphael.js. And optionnaly based on jQuery mousewheel for the zoom on mousewheel feature.</strong>
@@ -103,31 +103,31 @@
         <li>  <strong>Resizable</strong> Maps are easily resizable.</li>
         <li>  <strong>Zoom</strong> Zoom and panning abilities (also on mobile devices).</li>
     </ul><h2 id="how-to-use-mapael">
-        <a name="basic-code-example" class="anchor" href="#basic-code-example">#</a>Basic code example</h2>
+    <a name="basic-code-example" class="anchor" href="#basic-code-example">#</a>Basic code example</h2>
 
     <p>Here is the simplest example that shows how to display an empty map of the world :</p>
 
     <h3>HTML</h3>
 
             <pre class="brush: xml;">&lt;div class="container"&gt;
-    &lt;div class="map"&gt;Alternative content&lt;/div&gt;
+	&lt;div class="map"&gt;Alternative content&lt;/div&gt;
 &lt;/div&gt;
             </pre>
 
     <h3>Javascript</h3>
 
-            <pre class="brush: js;">
-            $(".container").mapael({
-                map : {
-                    name : "world_countries"
-                }
-            });
-            </pre>
+			<pre class="brush: js;">
+			$(".container").mapael({
+				map : {
+					name : "world_countries"
+				}
+			});
+			</pre>
 
     <h3>Result</h3>
     <div class="map_world"><div class="map"></div></div>
 
-    <h2 id="examples"><a name="examples" class="anchor" href="#examples">#</a>Examples</h2>
+    <h2 id="examples"><a class="anchor" href="#examples">#</a>Examples</h2>
 
     <h3>Basic</h3>
 
@@ -161,7 +161,7 @@
         <li><a href="http://jsfiddle.net/neveldo/b5fj4qod/" target="_blank">Use the 'eventHandlers' option to display information about plotted cities in a div on mouseover</a></li>
     </ul>
 
-    <h2 id="api-reference"><a name="api-reference" class="anchor" href="#api-reference">#</a>API reference (version 1.1.0)</h2>
+    <h2 id="api-reference"><a class="anchor" href="#api-reference">#</a>API reference (version 1.1.0)</h2>
 
     <p>All options are provided as an object argument of the function $.fn.mapael(Object options). Many of them have a default value. Default values are stored in the variables $.fn.mapael.defaultOptions and $.fn.mapael.legendDefaultOptions. If you want to re-define them, you can overload these two variables.</p>
     <p>Through these mapael options, you can load a map (such as the world map, the USA map, or your own map) and customize the attributes of areas (such as the background-color, the tooltip content, link, text, attributes on mouseover, jquery events, etc). You can plot points on the map by latitude and longitude or x and y and set their attributes. You can add curved links between two points. You can enable the zoom feature that allow to zoom the map through the buttons or through the mousewheel. You can define legends for areas and/or plotted points in order to apply automatically some attributes to the elements of the map depending on the associated value. Here is the complete API documentation.</p>
@@ -289,169 +289,170 @@
                         </li>
                     </ul>
                 </li>
-
-                <li>  <p><strong>areas :</strong> (Object) List of specific options for each area to display on the map. Areas must be identified according to the ids from the JS file of the intended map. For each area, options are provided as an object :</p>
-                    <ul>
-                        <li>  <strong>value :</strong> (Float or array) Value to associate to the area. It allows the point attributes to be overloaded by legend attributes if the value matches with a slice defined in the legend. It can be an array of values if you set a multiple criteria legend for areas.</li>
-                        <li>  <strong>+ Overload : </strong> all options from map.defaultArea and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
-                    </ul>
-                </li>
-
-                <li>  <p><strong>plots :</strong> (Object) Array of specific options for each plotted points to display on the map. A plotted point can be positioned with a (latitude, longitude) or a (x, y) couple. For each plotted point, options are provided as an object :</p>
-                    <ul>
-                        <li>  <strong>value :</strong> (Float or array) Value to associate to the plotted point. It allows the point attributes to be overloaded by legend attributes if the value matches with a slice defined in the legend. It can be an array of values if you set a multiple criteria legend for plotted points.</li>
-                        <li>  <strong>latitude :</strong> (Float) latitude of the plotted point</li>
-                        <li>  <strong>longitude :</strong> (Float) longitude of the plotted point</li>
-                        <li>  <strong>x :</strong> (Float) X coordinate of the plotted point</li>
-                        <li>  <strong>y :</strong> (Float) Y coordinate of the plotted point</li>
-                        <li>  <strong>+ Overload : </strong> all options from map.defaultPlot and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
-                    </ul>
-                </li>
-
-                <li>  <p><strong>links :</strong> (Object) Collection of curved links to draw on the map. For each link, options are provided as an object (<a href="http://jsfiddle.net/neveldo/yckqj78q/" target="_blank">example</a>) :</p>
-                    <ul>
-                        <li>  <strong>between :</strong> (Array) Array of two elements where the first one is the source of the link and the second one is the destination. Each can be a plotted point ID, an object that stores a latitude and a longitude ({latitude : …, longitude : …}), or an object that stores a x and y coordinates ({x : …, y: …}) (<a href="http://jsfiddle.net/neveldo/yckqj78q/" target="_blank">example</a>).</li>
-                        <li>  <strong>Overload :</strong>  all options from map.defaultLink and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
-                    </ul>
-                </li>
-
             </ul>
+        </li>
 
-            <h2 id="update-map-data">
-                <a name="update-map-data" class="anchor" href="#update-map-data">#</a>Update the map data</h2>
-
-            <p>Update map data is as simple as triggering an 'update' event on the map container with new data provided as argument. All attributes from plotted points and areas can be updated (including their related text, contents of the tooltips , ...).
-                <br />Update the values of plotted points and areas connected to a legend will automatically update their attributes according their new slices.
-            </p>
-            <pre class="brush: js;">$(".container").trigger('update', [updatedOptions, newPlots, deletedPlots, opt]);</pre>
+        <li>  <p><strong>areas :</strong> (Object) List of specific options for each area to display on the map. Areas must be identified according to the ids from the JS file of the intended map. For each area, options are provided as an object :</p>
             <ul>
-                <li>  <strong>updatedOptions :</strong> (Object) Object containing the new options for the plotted points, the areas an the links of the map to update. Form : {'areas' : {...}, 'plots' : {...}, 'links' : {...}}</li>
-                <li>  <strong>newPlots :</strong> (Object) Object containing the new plotted points to draw on the map.</li>
-                <li>  <strong>deletedPlots :</strong> (Array) Array containing the plotted points keys to delete from the map.</li>
-                <li>  <strong>opt :</strong> (Object) Additionnal options :
-                    <ul>
-                        <li>  <strong>animDuration :</strong> (Integer, default value : 0) Number of milliseconds for the animation duration.</li>
-                        <li>  <strong>resetPlots :</strong> (boolean, default value : false) Reset all previous data for plotted points.</li>
-                        <li>  <strong>resetAreas :</strong> (boolean, default value : false) Reset all previous data for areas.</li>
-                        <li>  <strong>afterUpdate :</strong> (Callback) Hook called after updating the map. See the "<a href="#extend-mapael">Extend Mapael</a>" section for more information.</li>
-                        <li>  <strong>newLinks :</strong> (Object) Object containing the new links to draw on the map.</li>
-                        <li>  <strong>deletedLinks :</strong> (Array) Array containing the links keys to delete from the map.</li>
-                    </ul>
-                </li>
+                <li>  <strong>value :</strong> (Float or array) Value to associate to the area. It allows the point attributes to be overloaded by legend attributes if the value matches with a slice defined in the legend. It can be an array of values if you set a multiple criteria legend for areas.</li>
+                <li>  <strong>+ Overload : </strong> all options from map.defaultArea and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
             </ul>
-            <p>Here is examples of refreshable map : <a href="http://www.vincentbroute.fr/mapael/usecases/world/">dataviz example</a>, <a target="_blank" href="http://jsfiddle.net/neveldo/TKUy4/">Misc attributes updated on the map of France</a></p>
+        </li>
 
-            <h2 id="extend-mapael">
-                <a name="extend-mapael" class="anchor" href="#extend-mapael">#</a>Extend Mapael</h2>
-
-            <p>Mapael can easily be extended with several hooks and events.</p>
-
-            <h3>Hook map.beforeInit</h3>
-            <pre class="brush: js;">beforeInit : function(container, paper, options) {...}</pre>
-
-            <p>This hook is called before the initialization of the map, right after the display of the areas.</p>
+        <li>  <p><strong>plots :</strong> (Object) Array of specific options for each plotted points to display on the map. A plotted point can be positioned with a (latitude, longitude) or a (x, y) couple. For each plotted point, options are provided as an object :</p>
             <ul>
-                <li>  <strong>container :</strong> (Object) Map container</li>
-                <li>  <strong>paper :</strong> (Object) Raphael Object</li>
-                <li>  <strong>options :</strong> (Object) Map options</li>
+                <li>  <strong>value :</strong> (Float or array) Value to associate to the plotted point. It allows the point attributes to be overloaded by legend attributes if the value matches with a slice defined in the legend. It can be an array of values if you set a multiple criteria legend for plotted points.</li>
+                <li>  <strong>latitude :</strong> (Float) latitude of the plotted point</li>
+                <li>  <strong>longitude :</strong> (Float) longitude of the plotted point</li>
+                <li>  <strong>x :</strong> (Float) X coordinate of the plotted point</li>
+                <li>  <strong>y :</strong> (Float) Y coordinate of the plotted point</li>
+                <li>  <strong>+ Overload : </strong> all options from map.defaultPlot and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
             </ul>
+        </li>
 
-            <h3>Hook map.afterInit</h3>
-            <pre class="brush: js;">afterInit : function(container, paper, areas, plots, options) {...}</pre>
-
-            <p>This hook is called after the initialization of the map.</p>
+        <li>  <p><strong>links :</strong> (Object) Collection of curved links to draw on the map. For each link, options are provided as an object (<a href="http://jsfiddle.net/neveldo/yckqj78q/" target="_blank">example</a>) :</p>
             <ul>
-                <li>  <strong>container :</strong> (Object) Map container</li>
-                <li>  <strong>paper :</strong> (Object) Raphael Object</li>
-                <li>  <strong>areas :</strong> (Object) Drawn areas</li>
-                <li>  <strong>plots :</strong> (Object) Drawn plotted points</li>
-                <li>  <strong>options :</strong> (Object) Map options</li>
+                <li>  <strong>between :</strong> (Array) Array of two elements where the first one is the source of the link and the second one is the destination. Each can be a plotted point ID, an object that stores a latitude and a longitude ({latitude : …, longitude : …}), or an object that stores a x and y coordinates ({x : …, y: …}) (<a href="http://jsfiddle.net/neveldo/yckqj78q/" target="_blank">example</a>).</li>
+                <li>  <strong>Overload :</strong>  all options from map.defaultLink and options from the associated legend if it exists can be overloaded here. For example, you can redefine specific values for attrs, attrsHover, tooltip content, etc.</li>
             </ul>
+        </li>
 
-            <p>Here is an example of use with the afterInit hook that allows to position images on the map : <a target="_blank" href="http://jsfiddle.net/neveldo/xqpwwLqg/">afterInit example</a></p>
+    </ul>
 
-            <h3>Hook afterUpdate</h3>
-            <pre class="brush: js;">afterUpdate : function(container, paper, areas, plots, options) {...}</pre>
+    <h2 id="update-map-data">
+        <a class="anchor" href="#update-map-data">#</a>Update the map data</h2>
 
-            <p>This hook is called after each update of the map ('update' event triggered).</p>
+    <p>Update map data is as simple as triggering an 'update' event on the map container with new data provided as argument. All attributes from plotted points and areas can be updated (including their related text, contents of the tooltips , ...).
+        <br />Update the values of plotted points and areas connected to a legend will automatically update their attributes according their new slices.
+    </p>
+    <pre class="brush: js;">$(".container").trigger('update', [updatedOptions, newPlots, deletedPlots, opt]);</pre>
+    <ul>
+        <li>  <strong>updatedOptions :</strong> (Object) Object containing the new options for the plotted points, the areas an the links of the map to update. Form : {'areas' : {...}, 'plots' : {...}, 'links' : {...}}</li>
+        <li>  <strong>newPlots :</strong> (Object) Object containing the new plotted points to draw on the map.</li>
+        <li>  <strong>deletedPlots :</strong> (Array) Array containing the plotted points keys to delete from the map.</li>
+        <li>  <strong>opt :</strong> (Object) Additionnal options :
             <ul>
-                <li>  <strong>container :</strong> (Object) Map container</li>
-                <li>  <strong>paper :</strong> (Object) Raphael Object</li>
-                <li>  <strong>areas :</strong> (Object) Drawn areas</li>
-                <li>  <strong>plots :</strong> (Object) Drawn plotted points</li>
-                <li>  <strong>options :</strong> (Object) Map options</li>
+                <li>  <strong>animDuration :</strong> (Integer, default value : 0) Number of milliseconds for the animation duration.</li>
+                <li>  <strong>resetPlots :</strong> (boolean, default value : false) Reset all previous data for plotted points.</li>
+                <li>  <strong>resetAreas :</strong> (boolean, default value : false) Reset all previous data for areas.</li>
+                <li>  <strong>afterUpdate :</strong> (Callback) Hook called after updating the map. See the "<a href="#extend-mapael">Extend Mapael</a>" section for more information.</li>
+                <li>  <strong>newLinks :</strong> (Object) Object containing the new links to draw on the map.</li>
+                <li>  <strong>deletedLinks :</strong> (Array) Array containing the links keys to delete from the map.</li>
             </ul>
+        </li>
+    </ul>
+    <p>Here is examples of refreshable map : <a href="http://www.vincentbroute.fr/mapael/usecases/world/">dataviz example</a>, <a target="_blank" href="http://jsfiddle.net/neveldo/TKUy4/">Misc attributes updated on the map of France</a></p>
 
-            <h3>Event afterZoom</h3>
-            <p>This event is triggered after a zoom action on the map. The event brings these data :</p>
-            <ul>
-                <li>  <strong>x1 :</strong> (int) left coordinate of the visible part</li>
-                <li>  <strong>y1 :</strong> (int) top coordinate of the visible part</li>
-                <li>  <strong>x2 :</strong> (int) right coordinate of the visible part</li>
-                <li>  <strong>y2 :</strong> (int) bottom coordinate of the visible part</li>
-            </ul>
+    <h2 id="extend-mapael">
+        <a class="anchor" href="#extend-mapael">#</a>Extend Mapael</h2>
 
-            <h3>Event afterPanning</h3>
-            <p>This event is triggered after a panning action on the map. The event brings these data :</p>
-            <ul>
-                <li>  <strong>x1 :</strong> (int) left coordinate of the visible part</li>
-                <li>  <strong>y1 :</strong> (int) top coordinate of the visible part</li>
-                <li>  <strong>x2 :</strong> (int) right coordinate of the visible part</li>
-                <li>  <strong>y2 :</strong> (int) bottom coordinate of the visible part</li>
-            </ul>
+    <p>Mapael can easily be extended with several hooks and events.</p>
 
-            <h2 id="zoom-feature">
-                <a name="zoom-feature" class="anchor" href="#zoom-feature">#</a>Zoom feature</h2>
+    <h3>Hook map.beforeInit</h3>
+    <pre class="brush: js;">beforeInit : function(container, paper, options) {...}</pre>
 
-            <p>Mapael allows you to trigger an event 'zoom' on the map container.</p>
+    <p>This hook is called before the initialization of the map, right after the display of the areas.</p>
+    <ul>
+        <li>  <strong>container :</strong> (Object) Map container</li>
+        <li>  <strong>paper :</strong> (Object) Raphael Object</li>
+        <li>  <strong>options :</strong> (Object) Map options</li>
+    </ul>
 
-            <pre class="brush: js;">$(".mapContainer").trigger("zoom", options);</pre>
-            <p>options (Object) : Zoom options. The point to focus on can be set by latitude and longitude or by x and y coordinates.</p>
-            <ul>
-                <ul>
-                    <li>  <strong>level :</strong> (Integer) level of the initial zoom between 0 and maxLevel.</li>
-                    <li>  <strong>x :</strong> (Integer) x coordinate of the point to focus on</li>
-                    <li>  <strong>y :</strong> (Integer) y coordinate of the point to focus on</li>
-                    <li>  <strong>latitude :</strong> (Float) latitude of the point to focus on</li>
-                    <li>  <strong>longitude :</strong> (Float) longitude of the point to focus on</li>
-                </ul>
+    <h3>Hook map.afterInit</h3>
+    <pre class="brush: js;">afterInit : function(container, paper, areas, plots, options) {...}</pre>
 
-                <p>The current zoom data can be retrieved with the data "ZoomLevel"</p>
-            <pre class="brush: js;">
+    <p>This hook is called after the initialization of the map.</p>
+    <ul>
+        <li>  <strong>container :</strong> (Object) Map container</li>
+        <li>  <strong>paper :</strong> (Object) Raphael Object</li>
+        <li>  <strong>areas :</strong> (Object) Drawn areas</li>
+        <li>  <strong>plots :</strong> (Object) Drawn plotted points</li>
+        <li>  <strong>options :</strong> (Object) Map options</li>
+    </ul>
+
+    <p>Here is an example of use with the afterInit hook that allows to position images on the map : <a target="_blank" href="http://jsfiddle.net/neveldo/xqpwwLqg/">afterInit example</a></p>
+
+    <h3>Hook afterUpdate</h3>
+    <pre class="brush: js;">afterUpdate : function(container, paper, areas, plots, options) {...}</pre>
+
+    <p>This hook is called after each update of the map ('update' event triggered).</p>
+    <ul>
+        <li>  <strong>container :</strong> (Object) Map container</li>
+        <li>  <strong>paper :</strong> (Object) Raphael Object</li>
+        <li>  <strong>areas :</strong> (Object) Drawn areas</li>
+        <li>  <strong>plots :</strong> (Object) Drawn plotted points</li>
+        <li>  <strong>options :</strong> (Object) Map options</li>
+    </ul>
+
+    <h3>Event afterZoom</h3>
+    <p>This event is triggered after a zoom action on the map. The event brings these data :</p>
+    <ul>
+        <li>  <strong>x1 :</strong> (int) left coordinate of the visible part</li>
+        <li>  <strong>y1 :</strong> (int) top coordinate of the visible part</li>
+        <li>  <strong>x2 :</strong> (int) right coordinate of the visible part</li>
+        <li>  <strong>y2 :</strong> (int) bottom coordinate of the visible part</li>
+    </ul>
+
+    <h3>Event afterPanning</h3>
+    <p>This event is triggered after a panning action on the map. The event brings these data :</p>
+    <ul>
+        <li>  <strong>x1 :</strong> (int) left coordinate of the visible part</li>
+        <li>  <strong>y1 :</strong> (int) top coordinate of the visible part</li>
+        <li>  <strong>x2 :</strong> (int) right coordinate of the visible part</li>
+        <li>  <strong>y2 :</strong> (int) bottom coordinate of the visible part</li>
+    </ul>
+
+    <h2 id="zoom-feature">
+        <a class="anchor" href="#zoom-feature">#</a>Zoom feature</h2>
+
+    <p>Mapael allows you to trigger an event 'zoom' on the map container.</p>
+
+    <pre class="brush: js;">$(".mapContainer").trigger("zoom", options);</pre>
+    <p>options (Object) : Zoom options. The point to focus on can be set by latitude and longitude or by x and y coordinates.</p>
+    <ul>
+        <li>  <strong>level :</strong> (Integer) level of the initial zoom between 0 and maxLevel.</li>
+        <li>  <strong>x :</strong> (Integer) x coordinate of the point to focus on</li>
+        <li>  <strong>y :</strong> (Integer) y coordinate of the point to focus on</li>
+        <li>  <strong>latitude :</strong> (Float) latitude of the point to focus on</li>
+        <li>  <strong>longitude :</strong> (Float) longitude of the point to focus on</li>
+    </ul>
+
+    <p>The current zoom data can be retrieved with the data "ZoomLevel"</p>
+			<pre class="brush: js;">
 $(".mapContainer").data("zoomLevel");
 $(".mapContainer").data("panX");
 $(".mapContainer").data("panY");
 $(".mapContainer").data("zoomX");
 $(".mapContainer").data("zoomY");
-            </pre>
+			</pre>
 
-                <p>Here is an example of use of the "zoom" event : <a target="_blank" href="http://jsfiddle.net/neveldo/ejf9dsL9/">Zoom example</a></p>
+    <p>Here is an example of use of the "zoom" event : <a target="_blank" href="http://jsfiddle.net/neveldo/ejf9dsL9/">Zoom example</a></p>
 
-                <h2 id="create-map"><a name="create-map" class="anchor" href="#create-map">#</a>Create your own vector map for jQuery Mapael</h2>
+    <h2 id="create-map"><a class="anchor" href="#create-map">#</a>Create your own vector map for jQuery Mapael</h2>
 
-                <p>A complete tutorial that explains you how to create your own vector map for jQuery Mapael is available <b><a href="create-map.php" target="_blank">here</a></b>.<br />Some usefull online tools are available to ease the work :</p>
+    <p>A complete tutorial that explains you how to create your own vector map for jQuery Mapael is available <b><a href="create-map.php" target="_blank">here</a></b>.<br />Some usefull online tools are available to ease the work :</p>
 
-                <p>
-                <ul>
-                    <li><a href="svg-to-mapael.php" target="_blank">"SVG to Mapael" tool</a></li>
-                    <li><a href="mapael-to-svg.php" target="_blank">"Mapael to SVG" tool</a></li>
-                    <li><a href="getcoords.php" target="_blank">getCoords() generator</a></li>
-                </ul>
-                </p>
+    <p>
+    <ul>
+        <li><a href="svg-to-mapael.php" target="_blank">"SVG to Mapael" tool</a></li>
+        <li><a href="mapael-to-svg.php" target="_blank">"Mapael to SVG" tool</a></li>
+        <li><a href="getcoords.php" target="_blank">getCoords() generator</a></li>
+    </ul>
+    </p>
 
-                <p>If you need a special integration of jQuery Mapael in your application, a custom feature or map, feel free to contact me at contact{at}vincentbroute{dot}fr.</p>
+    <p>If you need a special integration of jQuery Mapael in your application, a custom feature or map, feel free to contact me at contact{at}vincentbroute{dot}fr.</p>
 
-                <hr>
+    <hr>
 
-                <div class="footer">
-                    <p>Copyright (C) 2013 - 2015 <a href="http://www.vincentbroute.fr">Vincent Brouté</a> - Released under <a href="http://www.opensource.org/licenses/mit-license.php">MIT license</a></p>
-                </div>
+    <div class="footer">
+        <p>Copyright (C) 2013 - 2015 <a href="http://www.vincentbroute.fr">Vincent Brouté</a> - Released under <a href="http://www.opensource.org/licenses/mit-license.php">MIT license</a></p>
+    </div>
 
 </div> <!-- /container -->
 
 
-<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shCore.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shBrushJScript.min.js"></script>
@@ -460,27 +461,19 @@ $(".mapContainer").data("zoomY");
 <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js" charset="utf-8" ></script>
 <script src="source/js/jquery.mapael.js" charset="utf-8" ></script>
 <script src="source/js/maps/world_countries.js" charset="utf-8" ></script>
-
+<script type="text/javascript" src="assets/js/main.js"></script>
 <script type="text/javascript">
     $(function(){
-        $("a[href^='#']").on('click', function(e) {
-            e.preventDefault();
-            $('html, body').animate({ scrollTop: $(this.hash).offset().top - 60}, 500);
-        });
-
         $(".map_world").mapael({
             map : {
                 name : "world_countries"
             }
         });
-
-        SyntaxHighlighter.defaults['toolbar'] = false;
-        SyntaxHighlighter.all();
     });
 
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
     ga('create', 'UA-42216777-2', 'auto');
