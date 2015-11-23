@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Dataviz example with jQuery Mapael</title>
+	<meta charset="utf-8" />
+	<style type="text/css">
+		.mapTooltip {
+			position:fixed;
+			background-color : #fff;
+			moz-opacity:0.80;
+			opacity: 0.80;
+			filter:alpha(opacity=80);
+			border-radius:4px;
+			padding : 10px;
+			z-index: 1000;
+			max-width: 200px;
+			display:none;
+			color:#232323;
+		}
+		
+		.cityFrance {
+			background-color:#343434;
+			border-radius:10px;
+			width:400px;
+		}
+		
+		.mapLegend {
+		}
+		
+		h1 {
+			font-size:30px;
+			color:#613b1e;
+			margin:20px auto 20px auto;
+			display:block;
+			text-align:center;
+		}
+		
+		h2 {
+			margin:0;
+			padding:0;
+			font-size:22px;
+			color:#343434;
+			
+		}
+		
+		.container {
+			width: 90%;
+			overflow: hidden;
+			min-width: 700px;
+			max-width: 1200px; 
+			margin-left: auto;
+			margin-right: auto; 
+		}
+		
+		.knobContainer {
+			text-align:center;
+			margin:10px;
+		}
+		
+		.knobContainer canvas {
+			cursor:pointer;
+		}
+		
+		.rightPanel {
+			float:right;
+			width:223px;
+			border-radius:5px;
+			margin-left:5px;
+		}
+		
+		.map {
+			margin-right:228px;
+			overflow:hidden;
+			position:relative;
+			background-color:#232323;
+			border-radius:5px;
+		}
+		
+		.zoomIn, .zoomOut {
+			background-color:#dbdbdb;
+			border:1px solid #cfcfcf;
+			color:#161616;
+			width:16px;
+			height:18px;
+			line-height: 18px;
+			text-align:center;
+			border-radius:3px;
+			cursor:pointer;
+			position:absolute;
+			top : 10px;
+			font-weight:bold;
+			left : 10px;
+			
+			-webkit-user-select: none; // For Webkit
+			-khtml-user-select: none;
+			-moz-user-select: none; // For Mozilla
+			-o-user-select: none;
+			user-select: none; // Default
+		}
+		
+		.zoomOut {
+			top:35px;
+		}
+</style>
+</head>
+
+<body>
+	<div class="container">
+	
+		<h1>Dataviz example with <a href="https://github.com/neveldo/jQuery-Mapael">jQuery Mapael</a></h1>
+		<!-- <a href="" id="zoom-northamerica">North America</a> <a href="" id="zoom-southamerica">South America</a> <a href="" id="zoom-europe">Europe</a> <a href="" id="zoom-asia">Asia</a> <a href="" id="zoom-africa">Africa</a>  <a href="" id="zoom-oceania">Oceania</a>-->
+		<div class="world">
+			<div class="rightPanel">
+				<h2>Select a year</h2>
+				<div class="knobContainer">
+					<input class="knob" data-width="80" data-height="80" data-min="2003" data-max="2013" data-cursor=true data-fgColor="#454545" data-thickness=.45 value="2009" data-bgColor="#c7e8ff" /> 
+				</div>
+				<div class="areaLegend" ></div>
+				<div class="plotLegend" ></div>
+			</div>
+			<div class="map"></div>
+			<div style="clear: both;"></div>
+		</div>
+		<p style="text-align:center;">This dataviz is built on <a href="http://www.vincentbroute.fr/mapael/">Mapael</a> and <a href="http://anthonyterrien.com/knob/">Knob</a>. This is an example with fake data. <a href="https://twitter.com/VincentBroute" class="twitter-follow-button" data-show-count="false">Follow @VincentBroute</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></p>
+	</div>
+	
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js" charset="utf-8" ></script>
+	<script src="../../source/js/raphael/raphael-min.js" charset="utf-8" ></script>
+	<script src="../../source/js/jquery.mapael.js?v=201411272303" charset="utf-8" ></script>
+	<script src="jquery.knob.js" charset="utf-8"></script>
+	<script src="../../source/js/maps/world_countries.js?v=201411272303" charset="utf-8" ></script>
+	<script src="../../source/js/mousewheel/jquery.mousewheel.js" charset="utf-8" ></script>
+	<script src="world.js" charset="utf-8"></script>
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42216777-2', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+	
+</body>
+</html>

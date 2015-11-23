@@ -1,0 +1,242 @@
+body {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+/* Custom container */
+.container-narrow {
+    margin: 0 auto;
+    max-width: 80%;
+}
+
+.container-narrow > hr {
+    margin: 30px 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+    margin: 60px 0;
+    text-align: center;
+}
+
+.jumbotron h1 {
+    font-size: 72px;
+    line-height: 1;
+}
+
+.jumbotron .btn {
+    font-size: 21px;
+    padding: 14px 24px;
+}
+
+/* Supporting marketing content */
+.marketing {
+    margin: 60px 0;
+}
+
+.marketing p + h4 {
+    margin-top: 28px;
+}
+
+h1 {
+    float: left;
+    display: inline;
+    line-height: 20px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-right: 20px;
+}
+
+h1 a, h1 a:visited {
+    color: #5d5d5d;
+    font-size: 32px;
+}
+
+h1 a:hover, h1 a:focus, h1 a:visited {
+    color: #5d5d5d;
+    text-decoration: none;
+}
+
+h2 {
+    padding-top: 20px;
+    color: #5d5d5d;
+    font-size: 36px;
+}
+
+.subh2 {
+}
+
+body {
+    color: #5d5d5d;
+}
+
+.navbar-inverse .brand, .navbar-inverse .nav > li > a, .navbar-inverse .brand {
+    padding: 8px 0;
+    margin: 0 10px;
+    color: #1c93b6;
+    padding-bottom: 4px;
+    font-weight: bold;
+}
+
+.navbar-inverse .brand, .navbar-inverse .nav > li > a:hover, .navbar-inverse .nav > li > a:focus {
+    border-bottom: 2px solid #1c93b6;
+    background: none;
+}
+
+.navbar-inverse .navbar-inner {
+    border-bottom: 1px solid #c2c2c2;
+}
+
+.anchor, .anchor:hover, .anchor:visited {
+    margin-right: 5px;
+    color: #1c93b6;
+}
+
+.imgLink {
+    border: 2px dashed #c4e6f0;
+    margin-left: 5px;
+}
+
+.imgLink:hover {
+    border: 2px dashed #1c93b6;
+}
+
+.whatsnew, .whatsnew:hover, .whatsnew:visited {
+    font-size: 16px;
+    color: #e21c1c;
+    font-style: italic;
+}
+
+.nav li {
+    float: left;
+}
+
+.nav {
+    float: right;
+}
+
+.navbar-inverse {
+    background: #fff;
+    border: none;
+    padding-top: 10px;
+}
+
+.jumbotron {
+    background-color: #fff;
+    padding: 0;
+}
+
+.code .container:before, .code .container:after {
+    display: block;
+}
+
+.footer {
+    text-align: center;
+}
+
+.mosaicflow__column {
+    float: left;
+}
+
+.mosaicflow__item img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/*General Mosaic Styles*/
+.mosaic-block {
+    float: left;
+    position: relative;
+    overflow: hidden;
+    width: 400px;
+    height: 250px;
+    margin: 10px;
+    background: #111 url(../img/progress.gif) no-repeat center center;
+    border: 1px solid #fff;
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.mosaic-backdrop {
+    display: none;
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: #111;
+}
+
+.mosaic-overlay {
+    display: none;
+    z-index: 5;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #111;
+}
+
+/*** Custom Animation Styles (You can remove/add any styles below) ***/
+.circle .mosaic-overlay {
+    background: url(../img/hover-magnify.png) no-repeat center center;
+    opacity: 0;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=00)";
+    filter: alpha(opacity=00);
+    display: none;
+}
+
+.fade .mosaic-overlay {
+    opacity: 0;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=00)";
+    filter: alpha(opacity=00);
+    background: url(../img/bg-black.png);
+}
+
+.bar .mosaic-overlay {
+    bottom: -100px;
+    height: 100px;
+    background: url(../img/bg-black.png);
+}
+
+.bar2 .mosaic-overlay {
+    bottom: -50px;
+    height: 100px;
+    opacity: 0.8;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+    filter: alpha(opacity=80);
+}
+
+.bar2 .mosaic-overlay:hover {
+    opacity: 1;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter: alpha(opacity=100);
+}
+
+.bar3 .mosaic-overlay {
+    top: -100px;
+    height: 100px;
+    background: url(../img/bg-black.png);
+}
+
+/*** End Animation Styles ***/
+
+.container-narrow li {
+    margin-bottom: 10px;
+}
+
+.btn-download, .btn-download:hover {
+    background-color: #1c93b6;
+    color: #fff;
+    font-weight: bold;
+}
+
+.legend {
+    font-style: italic;
+    color: #878787;
+}
+
+.friends {
+    width: 160px;
+    float: right;
+    border: 2px dashed #1c93b6;
+    padding: 8px;
+}
