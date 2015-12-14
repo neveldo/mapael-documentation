@@ -108,7 +108,7 @@ if (count($_POST) > 0) {
 
     // Retrieve paths coordinates
     $elems = [];
-    preg_match_all('/<path(.*?)\/>/s', $svgContent, $matches);
+    preg_match_all('/<path(.*?)\/?>/s', $svgContent, $matches);
     $size = count($matches[0]);
 
     for ($i = 0; $i < $size; $i++) {
