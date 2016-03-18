@@ -214,7 +214,7 @@
                         <li>  <strong>attrsHover :</strong> (Object) Raphael attributes on mouse hover for all elements. Go to the <a href="http://raphaeljs.com/reference.html#Element.attr">Raphael reference</a> to view available options. You can set the animation duration with the 'animDuration' option.</li>
                         <li>  <strong>tooltip :</strong> (Object) Options for the tooltip
                             <ul>
-                                <li>  <strong>content :</strong> (String) Tooltip content to display on mouse hover</li>
+                                <li>  <strong>content :</strong> (String or function) Tooltip content to display on mouse hover. It can be a string or a function that returns the content to display within the tooltip and takes as only parameter the options object of the element currently overflown.</li>
                                 <li>  <strong>cssClass :</strong> (String) Additional CSS class(es) of the tooltip container. This option can be set to a specific value for each area or plotted point.</li>
                                 <li>  <strong>overflow :</strong> (Object, default value : null) This option allows the tooltip to overflow from the right and/or bottom border of the container.
 	                                <ul>
