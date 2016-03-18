@@ -330,19 +330,20 @@
     <p>Update map data is as simple as triggering an 'update' event on the map container with new data provided as argument. All attributes from plotted points and areas can be updated (including their related text, contents of the tooltips , ...).
         <br />Update the values of plotted points and areas connected to a legend will automatically update their attributes according their new slices.
     </p>
-    <pre class="brush: js;">$(".container").trigger('update', [updatedOptions, newPlots, deletedPlots, opt]);</pre>
+    <pre class="brush: js;">$(".container").trigger('update', [options]);</pre>
     <ul>
-        <li>  <strong>updatedOptions :</strong> (Object) Object containing the new options for the plotted points, the areas an the links of the map to update. Form : {'areas' : {...}, 'plots' : {...}, 'links' : {...}}</li>
-        <li>  <strong>newPlots :</strong> (Object) Object containing the new plotted points to draw on the map.</li>
-        <li>  <strong>deletedPlots :</strong> (Array) Array containing the plotted points keys to delete from the map.</li>
-        <li>  <strong>opt :</strong> (Object) Additionnal options :
+
+        <li>  <strong>options :</strong> (Object) Update options that can contains the following entries :
             <ul>
-                <li>  <strong>animDuration :</strong> (Integer, default value : 0) Number of milliseconds for the animation duration.</li>
-                <li>  <strong>resetPlots :</strong> (boolean, default value : false) Reset all previous data for plotted points.</li>
-                <li>  <strong>resetAreas :</strong> (boolean, default value : false) Reset all previous data for areas.</li>
-                <li>  <strong>afterUpdate :</strong> (Callback) Hook called after updating the map. See the "<a href="#extend-mapael">Extend Mapael</a>" section for more information.</li>
+                <li>  <strong>mapOptions :</strong> (Object) Object that contains the options to update for existing plots, areas or legends.</li>
+                <li>  <strong>replaceOptions :</strong> (Boolean) whether mapsOptions should entirely replace current map options, or just extend it.</li>
+                <li>  <strong>newPlots :</strong> (Object) new plots to add to the map.</li>
                 <li>  <strong>newLinks :</strong> (Object) Object containing the new links to draw on the map.</li>
-                <li>  <strong>deletedLinks :</strong> (Array) Array containing the links keys to delete from the map.</li>
+                <li>  <strong>deletePlotKeys :</strong> (array or string) plots to delete from the map (array, or "all" to remove all plots).</li>
+                <li>  <strong>deleteLinkKeys :</strong> (array or string) links to remove from the map (array, or "all" to remove all links).</li>
+                <li>  <strong>setLegendElemsState :</strong> (string or object) the state of legend elements to be set : 'show' (default) or 'hide'. This options can also be set with an object that contains several pairs of legendCssClass/state, for instance : {"areaLegend": "hide"}.</li>
+                <li>  <strong>animDuration :</strong> (Integer, default value : 0) Number of milliseconds for the animation duration.</li>
+                <li>  <strong>afterUpdate :</strong> (Callback) Hook called after updating the map. See the "<a href="#extend-mapael">Extend Mapael</a>" section for more information.</li>
             </ul>
         </li>
     </ul>
