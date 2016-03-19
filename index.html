@@ -181,10 +181,15 @@
                         <li>  <strong>touch :</strong> (Boolean, default value : true) Set to true in order to enable zoom and panning through touch actions.</li>
                         <li>  <strong>maxLevel :</strong> (Integer, default value : 5) Maximum level that the user can set to zoom.</li>
                         <li>  <strong>step :</strong> (Float, default value : 0.25) Zoom ratio between two levels.</li>
-                        <li>  <strong>zoomInCssClass :</strong> (String, default value : "zoomIn") CSS class for the zoom in button.</li>
-                        <li>  <strong>zoomOutCssClass :</strong> (String, default value : "zoomOut") CSS class for the zoom out button.</li>
                         <li>  <strong>animDuration :</strong> (Int, default value : 200) The duration of the zoom animation (this option have to be set to 0 in order to disable animation).</li>
                         <li>  <strong>animEasing :</strong> (String, default value : "linear") The easing function to use to animate the zoom action.</li>
+                        <li>  <strong>buttons :</strong> (Object) Object of options that allow to define the cssClass, the title and the text content of the zoom related buttons. The object can contain the following keys : 'reset' to define the options for the reset button, 'in' to define the options for the zoom-in button, 'out' to define the options for the zoom-out button. Here are the available options for each button type :
+                            <ul>
+                                <li>  <strong>cssClass :</strong> (String) The CSS class for the zoom button.</li>
+                                <li>  <strong>content :</strong> (String) The text content for the zoom ibutton.</li>
+                                <li>  <strong>title :</strong> (String) The title of the the zoom button.</li>
+                            </ul>
+                        </li>
                         <li>  <strong>init :</strong> (Objet) Set an initial zoom to the map that focus on a specific point (<a href="http://jsfiddle.net/neveldo/6ms3vusb/" target="_blank">example</a>). The point to focus on can be set by latitude and longitude or by x and y coordinates.
                             <ul>
                                 <li>  <strong>level :</strong> (Integer) level of the initial zoom between 0 and maxLevel.</li>
@@ -406,6 +411,33 @@
         <li>  <strong>y1 :</strong> (int) top coordinate of the visible part</li>
         <li>  <strong>x2 :</strong> (int) right coordinate of the visible part</li>
         <li>  <strong>y2 :</strong> (int) bottom coordinate of the visible part</li>
+    </ul>
+
+    <h2>Filter the elements to show on the map depending on values intervals</h2>
+    <p>The elements to show on the map can be filtered depending on values intervals by triggering a 'showElementsInRange' event on the map container :
+        $(".mapcontainer").trigger("showElementsInRange", [opt]); Available options :
+    </p>
+    <ul>
+        <li>  <strong>hiddenOpacity :</strong> (float) Opacity for hidden element (default = 0.3)</li>
+        <li>  <strong>animDuration :</strong> (int) Animation duration in ms (default = 0)</li>
+        <li>  <strong>afterShowRange :</strong> (callback) Function called after the range of elements is shown</li>
+        <li>  <strong>ranges :</strong> (object) The range to show, example:<pre class="brush: js;">
+            opt.ranges = {
+                'plot' : {
+                     0 : { // valueIndex
+                        'min': 1000,
+                        'max': 1200
+                     },
+                     1 : { // valueIndex
+                        'min': 10,
+                        'max': 12
+                     }
+                },
+                'area' : {
+                    {'min': 10, 'max': 20} // No valueIndex, only an object, use 0 as valueIndex (easy case)
+                }
+            }</pre>
+        </li>
     </ul>
 
     <h2 id="zoom-feature">
