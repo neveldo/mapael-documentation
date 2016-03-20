@@ -448,7 +448,7 @@
     <pre class="brush: js;">$(".mapContainer").trigger("zoom", options);</pre>
     <p>options (Object) : Zoom options. The point to focus on can be set by latitude and longitude or by x and y coordinates.</p>
     <ul>
-        <li>  <strong>level :</strong> (Integer) level of the initial zoom between 0 and maxLevel.</li>
+        <li>  <strong>level :</strong> (Integer or string) The level of the zoom between 0 and maxLevel. In order to zoom-in or zoom-out relatively to the current zoom level, you can set the level to a negative interger (eg : -5), or a string beginning by '+' (eg : '+5').</li>
         <li>  <strong>x :</strong> (Integer) x coordinate of the point to focus on</li>
         <li>  <strong>y :</strong> (Integer) y coordinate of the point to focus on</li>
         <li>  <strong>latitude :</strong> (Float) latitude of the point to focus on</li>
