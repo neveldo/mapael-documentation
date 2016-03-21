@@ -1,1468 +1,2181 @@
-/**
-*
-* Jquery Mapael - Dynamic maps jQuery plugin (based on raphael.js)
-* Requires jQuery and raphael.js
-*
-* Version: 1.1.0
-*
-* Copyright (c) 2015 Vincent Brouté (http://www.vincentbroute.fr/mapael)
-* Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
-*
-*/
-(function($) {
+/*!
+ *
+ * Jquery Mapael - Dynamic maps jQuery plugin (based on raphael.js)
+ * Requires jQuery, raphael.js and jquery.mousewheel
+ *
+ * Version: 2.0.0-dev
+ *
+ * Copyright (c) 2015 Vincent Brouté (http://www.vincentbroute.fr/mapael)
+ * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
+ *
+ * Thanks to Indigo744
+ *
+ */
+(function (factory) {
+    if (typeof exports === 'object') {
+        // CommonJS
+        module.exports = factory(require('jquery'), require('raphael'), require('mousewheel'));
+    } else if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery', 'raphael', 'mousewheel'], factory);
+    } else {
+        // Browser globals
+        factory(jQuery, Raphael, jQuery.fn.mousewheel);
+    }
+}(function ($, Raphael, mousewheel, undefined) {
 
-	"use strict";
-	
+    "use strict";
 
-	$.fn.mapael = function(options) {
-	
-		// Extend legend default options with user options
-		options = $.extend(true, {}, $.fn.mapael.defaultOptions, options);
-		
-		for (var type in options.legend) {
-			if ($.isArray(options.legend[type])) {
-				for (var i = 0; i < options.legend[type].length; ++i)
-					options.legend[type][i] = $.extend(true, {}, $.fn.mapael.legendDefaultOptions[type], options.legend[type][i]);
-			} else {
-				options.legend[type] = $.extend(true, {}, $.fn.mapael.legendDefaultOptions[type], options.legend[type]);
-			}
-		}
-		
-		return this.each(function() {
-		
-			var $self = $(this)
-				, $container = $("." + options.map.cssClass, this).empty()
-				, $tooltip = $("<div>").addClass(options.map.tooltip.cssClass).css("display", "none").appendTo(options.map.tooltip.target || $container)
-				, mapConf = $.fn.mapael.maps[options.map.name]
-				, paper = new Raphael($container[0], mapConf.width, mapConf.height)
-				, elemOptions = {}
-				, resizeTO = 0
-				, areas = {}
-				, plots = {}
-				, links = {}
-				, legends = []
-				, id = 0
-				, zoomCenterX = 0
-				, zoomCenterY = 0
-				, previousPinchDist = 0;
-			
-			options.map.tooltip.css && $tooltip.css(options.map.tooltip.css);
-			paper.setViewBox(0, 0, mapConf.width, mapConf.height, false);
-			
-			// Draw map areas
-			for (id in mapConf.elems) {
-				elemOptions = $.fn.mapael.getElemOptions(
-					options.map.defaultArea
-					, (options.areas[id] ? options.areas[id] : {})
-					, options.legend.area
-				);
-				areas[id] = {"mapElem" : paper.path(mapConf.elems[id]).attr(elemOptions.attrs)};
-			}
+    // The plugin name (used on several places)
+    var pluginName = "mapael";
 
-			// Hook that allows to add custom processing on the map
-			options.map.beforeInit && options.map.beforeInit($self, paper, options);
-			
-			// Init map areas in a second loop (prevent texts to be hidden by map elements)
-			for (id in mapConf.elems) {
-				elemOptions = $.fn.mapael.getElemOptions(
-					options.map.defaultArea
-					, (options.areas[id] ? options.areas[id] : {})
-					, options.legend.area
-				);
-				$.fn.mapael.initElem(paper, areas[id], elemOptions, $tooltip, id);
-			}
+    // Version number of jQuery Mapael. See http://semver.org/ for more information.
+    var version = "2.0.0-dev";
 
-			// Draw links
-			links = $.fn.mapael.drawLinksCollection(paper, options, options.links, mapConf.getCoords, $tooltip);
+    /*
+     * Mapael constructor
+     * Init instance vars and call init()
+     * @param container the DOM element on which to apply the plugin
+     * @param options the complete options to use
+     */
+    var Mapael = function (container, options) {
+        var self = this;
 
-			// Draw plots
-			for (id in options.plots) {
-				plots[id] = $.fn.mapael.drawPlot(id, options, mapConf, paper, $tooltip);
-			}
+        // the global container (DOM element object)
+        self.container = container;
 
-			/**
-			* Zoom on the map at a specific level focused on specific coordinates
-			* If no coordinates are specified, the zoom will be focused on the center of the map
-			* options :
-			*	"level" : level of the zoom between 0 and maxLevel
-			*	"x" or "latitude" : x coordinate or latitude of the point to focus on
-			*	"y" or "longitude" : y coordinate or longitude of the point to focus on
-			*	"fixedCenter" : set to true in order to preserve the position of x,y in the canvas when zoomed
-			*/
-			$self.on("zoom", function(e, zoomOptions) {
-				var newLevel = Math.min(Math.max(zoomOptions.level, 0), options.map.zoom.maxLevel)
-					, panX = 0
-					, panY = 0
-					, previousZoomLevel = (1 + $self.data("zoomLevel") * options.map.zoom.step)
-					, zoomLevel = (1 + newLevel * options.map.zoom.step)
-					, offsetX = 0
-					, offsetY = 0
-					, coords = {};
-				
-				if (typeof zoomOptions.latitude != "undefined" && typeof zoomOptions.longitude != "undefined") {
-					coords = mapConf.getCoords(zoomOptions.latitude, zoomOptions.longitude);
-					zoomOptions.x = coords.x;
-					zoomOptions.y = coords.y;
-				}
-				
-				if (typeof zoomOptions.x == "undefined")
-					zoomOptions.x = paper._viewBox[0] + paper._viewBox[2] / 2;
+        // the global container (jQuery object)
+        self.$container = $(container);
 
-				if (typeof zoomOptions.y == "undefined")
-					zoomOptions.y = (paper._viewBox[1] + paper._viewBox[3] / 2);
+        // the global options
+        self.options = self.extendDefaultOptions(options);
 
-				if (newLevel == 0) {
-					panX = 0;
-					panY = 0;
-				} else if (typeof zoomOptions.fixedCenter != 'undefined' && zoomOptions.fixedCenter == true) {
-					offsetX = $self.data("panX") + ((zoomOptions.x - $self.data("panX")) * (zoomLevel - previousZoomLevel)) / zoomLevel;
-					offsetY = $self.data("panY") + ((zoomOptions.y - $self.data("panY")) * (zoomLevel - previousZoomLevel)) / zoomLevel;
-				
-					panX = Math.min(Math.max(0, offsetX), (mapConf.width - (mapConf.width / zoomLevel)));
-					panY = Math.min(Math.max(0, offsetY), (mapConf.height - (mapConf.height / zoomLevel)));
-				} else {
-					panX = Math.min(Math.max(0, zoomOptions.x - (mapConf.width / zoomLevel)/2), (mapConf.width - (mapConf.width / zoomLevel)));
-					panY = Math.min(Math.max(0, zoomOptions.y - (mapConf.height / zoomLevel)/2), (mapConf.height - (mapConf.height / zoomLevel)));
-				}
+        // Save initial HTML content (used by destroy method)
+        self.initialHTMLContent = self.$container.html();
 
-				// Update zoom level of the map
-				if (zoomLevel == previousZoomLevel && panX == $self.data('panX') && panY == $self.data('panY')) return;
+        // zoom TimeOut handler (used to set and clear)
+        self.zoomTO = 0;
 
-				if (options.map.zoom.animDuration > 0) {
-					$.fn.mapael.animateViewBox($container, paper, panX, panY, mapConf.width / zoomLevel, mapConf.height / zoomLevel, options.map.zoom.animDuration, options.map.zoom.animEasing);
-				} else {
-					paper.setViewBox(panX, panY, mapConf.width / zoomLevel, mapConf.height / zoomLevel);
-					clearTimeout($.fn.mapael.zoomTO);
-					$.fn.mapael.zoomTO = setTimeout(function(){$container.trigger("afterZoom", {x1 : panX, y1 : panY, x2 : (panX+(mapConf.width / zoomLevel)), y2 : (panY+(mapConf.height / zoomLevel))});}, 150);
-				}
+        // zoom center coordinate (set at touchstart)
+        self.zoomCenterX = 0;
+        self.zoomCenterY = 0;
 
-				$self.data({"zoomLevel" : newLevel, "panX" : panX, "panY" : panY, "zoomX" : panX + paper._viewBox[2] / 2, "zoomY" : panY + paper._viewBox[3] / 2});
-			});
-			
-			/**
-			* Update the zoom level of the map on mousewheel
-			*/
-			options.map.zoom.enabled && options.map.zoom.mousewheel && $self.on("mousewheel", function(e) {
-				var offset = $container.offset(),
-					initFactor = (options.map.width) ? ($.fn.mapael.maps[options.map.name].width / options.map.width) : ($.fn.mapael.maps[options.map.name].width / $container.width())
-					, zoomLevel = (e.deltaY > 0) ? 1 : -1
-					, zoomFactor = 1 / (1 + ($self.data("zoomLevel")) * options.map.zoom.step)
-					, x = zoomFactor * initFactor * (e.clientX + $(window).scrollLeft() - offset.left) + $self.data("panX")
-					, y = zoomFactor * initFactor * (e.clientY + $(window).scrollTop() - offset.top) + $self.data("panY");
+        // Zoom pinch (set at touchstart and touchmove)
+        self.previousPinchDist = 0;
 
-				$self.trigger("zoom", {"fixedCenter" : true, "level" : $self.data("zoomLevel") + zoomLevel, "x" : x, "y" : y});
-					
-				return false;
-			});
+        // Zoom data
+        self.zoomData = {
+            zoomLevel: 0,
+            zoomX: 0,
+            zoomY: 0,
+            panX: 0,
+            panY: 0
+        };
 
-			/**
-			* Update the zoom level of the map on touch pinch
-			*/
-			options.map.zoom.enabled && options.map.zoom.touch && $self.on("touchstart", function(e) {
-				if (e.originalEvent.touches.length === 2) {
-					zoomCenterX = (e.originalEvent.touches[0].clientX + e.originalEvent.touches[1].clientX) / 2;
-					zoomCenterY = (e.originalEvent.touches[0].clientY + e.originalEvent.touches[1].clientY) / 2;
-					previousPinchDist = Math.sqrt(Math.pow((e.originalEvent.touches[1].clientX - e.originalEvent.touches[0].clientX), 2) + Math.pow((e.originalEvent.touches[1].clientY - e.originalEvent.touches[0].clientY), 2));
-				}
-			});
+        // resize TimeOut handler (used to set and clear)
+        self.resizeTO = 0;
 
-			options.map.zoom.enabled && options.map.zoom.touch && $self.on("touchmove", function(e) {
-				var offset = 0, initFactor = 0, zoomFactor = 0, x = 0, y = 0, pinchDist = 0, zoomLevel = 0;
+        // Panning: tell if panning action is in progress
+        self.panning = false;
 
-				if (e.originalEvent.touches.length === 2) {
-					pinchDist = Math.sqrt(Math.pow((e.originalEvent.touches[1].clientX - e.originalEvent.touches[0].clientX), 2) + Math.pow((e.originalEvent.touches[1].clientY - e.originalEvent.touches[0].clientY), 2));
+        // Panning TimeOut handler (used to set and clear)
+        self.panningTO = 0;
 
-					if (Math.abs(pinchDist - previousPinchDist) > 15) {
-						offset = $container.offset();
-						initFactor = (options.map.width) ? ($.fn.mapael.maps[options.map.name].width / options.map.width) : ($.fn.mapael.maps[options.map.name].width / $container.width());
-						zoomFactor = 1 / (1 + ($self.data("zoomLevel")) * options.map.zoom.step);
-						x = zoomFactor * initFactor * (zoomCenterX + $(window).scrollLeft() - offset.left) + $self.data("panX");
-						y = zoomFactor * initFactor * (zoomCenterY + $(window).scrollTop() - offset.top) + $self.data("panY");
+        // Animate view box Interval handler (used to set and clear)
+        self.animationIntervalID = null;
 
-						zoomLevel = (pinchDist - previousPinchDist) / Math.abs(pinchDist - previousPinchDist);
-						$self.trigger("zoom", {"fixedCenter" : true, "level" : $self.data("zoomLevel") + zoomLevel, "x" : x, "y" : y});
-						previousPinchDist = pinchDist;
-					}
-					return false;
-				}
-			});
+        // Map subcontainer jQuery object
+        self.$map = {};
 
-			// Enable zoom
-			if (options.map.zoom.enabled)
-				$.fn.mapael.initZoom($container, paper, mapConf.width, mapConf.height, options.map.zoom);
-			
-			// Set initial zoom
-			if (typeof options.map.zoom.init != "undefined") {
-				$self.trigger("zoom", options.map.zoom.init);
-			}
-			
-			// Create the legends for areas
-			$.merge(legends, $.fn.mapael.createLegends($self, options, "area", areas, 1));
-				
-			/**
-			*
-			* Update the current map
-			* Refresh attributes and tooltips for areas and plots
-			* @param updatedOptions options to update for plots and areas
-			* @param newPlots new plots to add to the map
-			* @param deletedPlotsplots to delete from the map
-			* @param opt option for the refresh :
-			*  opt.animDuration animation duration in ms (default = 0)
-			*  opt.resetAreas true to reset previous areas options
-			*  opt.resetPlots true to reset previous plots options
-			*  opt.resetLinks true to reset previous links options
-			*  opt.afterUpdate Hook that allows to add custom processing on the map
-			*  opt.newLinks new links to add to the map
-			*  opt.deletedLinks links to remove from the map
-			*/
-			$self.on("update", function(e, updatedOptions, newPlots, deletedPlots, opt) {
-				var i = 0
-					, id = 0
-					, animDuration = 0
-					, elemOptions = {};
-				
-				// Reset hidden map elements (when user click on legend elements)
-				legends.forEach(function(el) {
-					el.forEach && el.forEach(function(el) {
-						if(typeof el.hidden != "undefined" && el.hidden == true) {
-							$(el.node).trigger("click");
-						}
-					})
-				});
-				
-				if (typeof opt != "undefined") {
-					(opt.resetAreas) && (options.areas = {});
-					(opt.resetPlots) && (options.plots = {});
-					(opt.resetLinks) && (options.links = {});
-					(opt.animDuration) && (animDuration = opt.animDuration);
-				}
-				
-				$.extend(true, options, updatedOptions);
+        // The tooltip jQuery object
+        self.$tooltip = {};
 
-				// Delete plots
-				if (typeof deletedPlots == "object") {
-					for (;i < deletedPlots.length; i++) {
-						if (typeof plots[deletedPlots[i]] != "undefined") {
-							if (animDuration > 0) {
-								(function(plot) {
-									plot.mapElem.animate({"opacity":0}, animDuration, "linear", function() {plot.mapElem.remove();});
-									if (plot.textElem) {
-										plot.textElem.animate({"opacity":0}, animDuration, "linear", function() {plot.textElem.remove();});
-									}
-								})(plots[deletedPlots[i]]);
-							} else {
-								plots[deletedPlots[i]].mapElem.remove();
-								if (plots[deletedPlots[i]].textElem) {
-									plots[deletedPlots[i]].textElem.remove();
-								}
-							}
-							delete plots[deletedPlots[i]];
-						}
-					}
-				}
+        // The paper Raphael object
+        self.paper = {};
 
-				// Delete links
-				if (typeof opt != "undefined" && typeof opt.deletedLinks == "object") {
-					for (i = 0;i < opt.deletedLinks.length; i++) {
-						if (typeof links[opt.deletedLinks[i]] != "undefined") {
-							if (animDuration > 0) {
-								(function(plot) {
-									plot.mapElem.animate({"opacity":0}, animDuration, "linear", function() {plot.mapElem.remove();});
-									if (plot.textElem) {
-										plot.textElem.animate({"opacity":0}, animDuration, "linear", function() {plot.textElem.remove();});
-									}
-								})(links[opt.deletedLinks[i]]);
-							} else {
-								links[opt.deletedLinks[i]].mapElem.remove();
-								if (links[opt.deletedLinks[i]].textElem) {
-									links[opt.deletedLinks[i]].textElem.remove();
-								}
-							}
-							delete links[opt.deletedLinks[i]];
-						}
-					}
-				}
-				
-				// New plots
-				if (typeof newPlots == "object") {
-					for (id in newPlots) {
-						if (typeof plots[id] == "undefined") {
-							options.plots[id] = newPlots[id];
-							plots[id] = $.fn.mapael.drawPlot(id, options, mapConf, paper, $tooltip);
-							if (animDuration > 0) {
-								plots[id].mapElem.attr({opacity : 0});
-								plots[id].mapElem.animate({"opacity": (typeof plots[id].mapElem.originalAttrs.opacity != "undefined") ? plots[id].mapElem.originalAttrs.opacity : 1}, animDuration);
-								
-								if (plots[id].textElem) {
-									plots[id].textElem.attr({opacity : 0});
-									plots[id].textElem.animate({"opacity": (typeof plots[id].textElem.originalAttrs.opacity != "undefined") ? plots[id].textElem.originalAttrs.opacity : 1}, animDuration);
-								}
-							}
-						}
-					}
-				}
+        // The areas object list
+        self.areas = {};
 
-				// New links
-				if (typeof opt != "undefined" && typeof opt.newLinks == "object") {
-					var newLinks = $.fn.mapael.drawLinksCollection(paper, options, opt.newLinks, mapConf.getCoords, $tooltip);
-					$.extend(links);
-					if (animDuration > 0) {
-						for (id in newLinks) {
-							newLinks[id].mapElem.attr({opacity : 0});
-							newLinks[id].mapElem.animate({"opacity": (typeof newLinks[id].mapElem.originalAttrs.opacity != "undefined") ? newLinks[id].mapElem.originalAttrs.opacity : 1}, animDuration);
+        // The plots object list
+        self.plots = {};
 
-							if (newLinks[id].textElem) {
-								newLinks[id].textElem.attr({opacity : 0});
-								newLinks[id].textElem.animate({"opacity": (typeof newLinks[id].textElem.originalAttrs.opacity != "undefined") ? newLinks[id].textElem.originalAttrs.opacity : 1}, animDuration);
-							}
-						}
-					}
-				}
+        // The links object list
+        self.links = {};
 
-				// Update areas attributes and tooltips
-				for (id in areas) {
-					elemOptions = $.fn.mapael.getElemOptions(
-						options.map.defaultArea
-						, (options.areas[id] ? options.areas[id] : {})
-						, options.legend.area
-					);
-					
-					$.fn.mapael.updateElem(elemOptions, areas[id], $tooltip, animDuration);
-				}
-				
-				// Update plots attributes and tooltips
-				for (id in plots) {
-					elemOptions = $.fn.mapael.getElemOptions(
-						options.map.defaultPlot
-						, (options.plots[id] ? options.plots[id] : {})
-						, options.legend.plot
-					);
-					if (elemOptions.type == "square") {
-						elemOptions.attrs.width = elemOptions.size;
-						elemOptions.attrs.height = elemOptions.size;
-						elemOptions.attrs.x = plots[id].mapElem.attrs.x - (elemOptions.size - plots[id].mapElem.attrs.width) / 2;
-						elemOptions.attrs.y = plots[id].mapElem.attrs.y - (elemOptions.size - plots[id].mapElem.attrs.height) / 2;
-					} else if (elemOptions.type == "image") {
-						elemOptions.attrs.width = elemOptions.width;
-						elemOptions.attrs.height = elemOptions.height;
-						elemOptions.attrs.x = plots[id].mapElem.attrs.x - (elemOptions.width - plots[id].mapElem.attrs.width) / 2;
-						elemOptions.attrs.y = plots[id].mapElem.attrs.y - (elemOptions.height - plots[id].mapElem.attrs.height) / 2;
-					} else { // Default : circle
-						elemOptions.attrs.r = elemOptions.size / 2;
-					}
-					
-					$.fn.mapael.updateElem(elemOptions, plots[id], $tooltip, animDuration);
-				}
+        // The map configuration object (taken from map file)
+        self.mapConf = {};
 
-				// Update links attributes and tooltips
-				for (id in links) {
-					elemOptions = $.fn.mapael.getElemOptions(
-						options.map.defaultLink
-						, (options.links[id] ? options.links[id] : {})
-						, {}
-					);
-					
-					$.fn.mapael.updateElem(elemOptions, links[id], $tooltip, animDuration);
-				}
-				
-				if(typeof opt != "undefined")
-					opt.afterUpdate && opt.afterUpdate($self, paper, areas, plots, options);
-			});
-			
-			// Handle resizing of the map
-			if (options.map.width) {
-				paper.setSize(options.map.width, mapConf.height * (options.map.width / mapConf.width));
-				
-				// Create the legends for plots taking into account the scale of the map
-				$.merge(legends, $.fn.mapael.createLegends($self, options, "plot", plots, (options.map.width / mapConf.width)));
-			} else {
-				$(window).on("resize", function() {
-					clearTimeout(resizeTO);
-					resizeTO = setTimeout(function(){$container.trigger("resizeEnd");}, 150);
-				});
-				
-				// Create the legends for plots taking into account the scale of the map
-				var createPlotLegend = function() {
-					$.merge(legends, $.fn.mapael.createLegends($self, options, "plot", plots, ($container.width() / mapConf.width)));
-					
-					$container.unbind("resizeEnd", createPlotLegend);
-				};
-				
-				$container.on("resizeEnd", function() {
-					var containerWidth = $container.width();
-					if (paper.width != containerWidth) {
-						paper.setSize(containerWidth, mapConf.height * (containerWidth / mapConf.width));
-					}
-				}).on("resizeEnd", createPlotLegend).trigger("resizeEnd");
-			}
-			
-			// Hook that allows to add custom processing on the map
-			options.map.afterInit && options.map.afterInit($self, paper, areas, plots, options);
-			
-			$(paper.desc).append(" and Mapael (http://www.vincentbroute.fr/mapael/)");
-		});
-	};
+        // Let's start the initialization
+        self.init();
+    };
 
-	$.fn.mapael.zoomTO = 0;
-	
-	/**
-	* Init the element "elem" on the map (drawing, setting attributes, events, tooltip, ...)
-	*/
-	$.fn.mapael.initElem = function(paper, elem, options, $tooltip, id) {
-		var bbox = {}, textPosition = {};
-		if (typeof options.value != "undefined")
-			elem.value = options.value;
-		
-		// Init attrsHover
-		$.fn.mapael.setHoverOptions(elem.mapElem, options.attrs, options.attrsHover);
-		
-		// Init the label related to the element
-		if (options.text && typeof options.text.content != "undefined") {
-			// Set a text label in the area
-			bbox = elem.mapElem.getBBox();
-			textPosition = $.fn.mapael.getTextPosition(bbox, options.text.position, options.text.margin);
-			options.text.attrs["text-anchor"] = textPosition.textAnchor;
-			elem.textElem = paper.text(textPosition.x, textPosition.y, options.text.content).attr(options.text.attrs);
-			$.fn.mapael.setHoverOptions(elem.textElem, options.text.attrs, options.text.attrsHover);
-			options.eventHandlers && $.fn.mapael.setEventHandlers(id, options, elem.mapElem, elem.textElem);
-			$.fn.mapael.setHover(paper, elem.mapElem, elem.textElem);
-			$(elem.textElem.node).attr("data-id", id);
-		} else {
-			options.eventHandlers && $.fn.mapael.setEventHandlers(id, options, elem.mapElem);
-			$.fn.mapael.setHover(paper, elem.mapElem);
-		}
-		
-		// Init the tooltip
-		if (options.tooltip) {
-			elem.mapElem.tooltip = options.tooltip;
-			$.fn.mapael.setTooltip(elem.mapElem, $tooltip);
-			
-			if (options.text && typeof options.text.content != "undefined") {
-				elem.textElem.tooltip = options.tooltip;
-				$.fn.mapael.setTooltip(elem.textElem, $tooltip);
-			}
-		}
-		
-		// Init the link
-		if (options.href) {
-			elem.mapElem.href = options.href;
-			elem.mapElem.target = options.target;
-			$.fn.mapael.setHref(elem.mapElem);
-			
-			if (options.text && typeof options.text.content != "undefined") {
-				elem.textElem.href = options.href;
-				elem.textElem.target = options.target;
-				$.fn.mapael.setHref(elem.textElem);
-			}
-		}
-		
-		$(elem.mapElem.node).attr("data-id", id);
-	};
-	
-	/**
-	* Draw all links between plots on the paper
-	*/
-	$.fn.mapael.drawLinksCollection = function(paper, options, linksCollection, getCoords, $tooltip) {
-		var p1 = {}
-			, p2 = {}
-			, elemOptions = {}
-			, coordsP1 = {}
-			, coordsP2 ={}
-			, links = {};
+    /*
+     * Mapael Prototype
+     * Defines all methods and properties needed by Mapael
+     * Each mapael object inherits their properties and methods from this prototype
+     */
+    Mapael.prototype = {
 
-		for (var id in linksCollection) {
-			elemOptions = $.fn.mapael.getElemOptions(options.map.defaultLink, linksCollection[id], {});
-			
-			if (typeof linksCollection[id].between[0] == 'string') {
-				p1 = options.plots[linksCollection[id].between[0]];
-			} else {
-				p1 = linksCollection[id].between[0];
-			}
+        /*
+         * Version number
+         */
+        version: version,
 
-			if (typeof linksCollection[id].between[1] == 'string') {
-				p2 = options.plots[linksCollection[id].between[1]];
-			} else {
-				p2 = linksCollection[id].between[1];
-			}
+        /*
+         * Initialize the plugin
+         * Called by the constructor
+         */
+        init: function () {
+            var self = this;
 
-			if (typeof p1.latitude != "undefined" && typeof p1.longitude != "undefined") {
-				coordsP1 = getCoords(p1.latitude, p1.longitude);
-			} else {
-				coordsP1.x = p1.x;
-				coordsP1.y = p1.y;
-			}
+            // Init check for class existence
+            if (self.options.map.cssClass === "" || $("." + self.options.map.cssClass, self.container).length === 0) {
+                throw new Error("The map class `" + self.options.map.cssClass + "` doesn't exists");
+            }
 
-			if (typeof p2.latitude != "undefined" && typeof p2.longitude != "undefined") {
-				coordsP2 = getCoords(p2.latitude, p2.longitude);
-			} else {
-				coordsP2.x = p2.x;
-				coordsP2.y = p2.y;
-			}
-			links[id] = $.fn.mapael.drawLink(id, paper, coordsP1.x, coordsP1.y, coordsP2.x, coordsP2.y, elemOptions, $tooltip);
-		}
-		return links;
-	};
-	
-	/**
-	* Draw a curved link between two couples of coordinates a(xa,ya) and b(xb, yb) on the paper
-	*/
-	$.fn.mapael.drawLink = function(id, paper, xa, ya, xb, yb, elemOptions, $tooltip) {
-		var elem = {}
-		
-			// Compute the "curveto" SVG point, d(x,y)
-			// c(xc, yc) is the center of (xa,ya) and (xb, yb)
-			, xc = (xa + xb) / 2
-			 , yc = (ya + yb) / 2
-				
-			 // Equation for (cd) : y = acd * x + bcd (d is the cure point)
-			 , acd = - 1 / ((yb - ya) / (xb - xa))
-			 , bcd = yc - acd * xc
-		
-			 // dist(c,d) = dist(a,b) (=abDist)
-			 , abDist = Math.sqrt((xb-xa)*(xb-xa) + (yb-ya)*(yb-ya))
+            // Create the tooltip container
+            self.$tooltip = $("<div>").addClass(self.options.map.tooltip.cssClass).css("display", "none");
 
-			 // Solution for equation dist(cd) = sqrt((xd - xc)² + (yd - yc)²)
-			 // dist(c,d)² = (xd - xc)² + (yd - yc)²
-			 // We assume that dist(c,d) = dist(a,b)
-			 // so : (xd - xc)² + (yd - yc)² - dist(a,b)² = 0
-			 // With the factor : (xd - xc)² + (yd - yc)² - (factor*dist(a,b))² = 0
-			 // (xd - xc)² + (acd*xd + bcd - yc)² - (factor*dist(a,b))² = 0
-			 , a = 1 + acd*acd
-			 , b = -2 * xc + 2*acd*bcd - 2 * acd*yc
-			 , c = xc*xc + bcd*bcd - bcd*yc - yc*bcd + yc*yc - ((elemOptions.factor*abDist) * (elemOptions.factor*abDist))
-			 , delta = b*b - 4*a*c
-			 , x = 0
-			 , y = 0;
-		
-		// There are two solutions, we choose one or the other depending on the sign of the factor
-		if (elemOptions.factor > 0) {
-			 x = (-b + Math.sqrt(delta)) / (2*a);
-			 y = acd * x + bcd;
-		} else {
-			 x = (-b - Math.sqrt(delta)) / (2*a);
-			 y = acd * x + bcd;
-		}
+            // Get the map container, empty it then append tooltip
+            self.$map = $("." + self.options.map.cssClass, self.container).empty().append(self.$tooltip);
 
-		elem.mapElem = paper.path("m "+xa+","+ya+" C "+x+","+y+" "+xb+","+yb+" "+xb+","+yb+"").attr(elemOptions.attrs);
-		$.fn.mapael.initElem(paper, elem, elemOptions, $tooltip, id);
-		
-		return elem;
-	};
+            // Get the map from $.mapael or $.fn.mapael (backward compatibility)
+            if ($[pluginName] && $[pluginName].maps && $[pluginName].maps[self.options.map.name]) {
+                // Mapael version >= 2.x
+                self.mapConf = $[pluginName].maps[self.options.map.name];
+            } else if ($.fn[pluginName] && $.fn[pluginName].maps && $.fn[pluginName].maps[self.options.map.name]) {
+                // Mapael version <= 1.x - DEPRECATED
+                self.mapConf = $.fn[pluginName].maps[self.options.map.name];
+                if (window.console && window.console.warn) {
+                    window.console.warn("Extending $.fn.mapael is deprecated (map '" + self.options.map.name + "')");
+                }
+            } else {
+                throw new Error("Unknown map '" + self.options.map.name + "'");
+            }
 
-	/**
-	* Update the element "elem" on the map with the new elemOptions options
-	*/
-	$.fn.mapael.updateElem = function(elemOptions, elem, $tooltip, animDuration) {
-		var bbox, textPosition, plotOffsetX, plotOffsetY;
-		if (typeof elemOptions.value != "undefined")
-			elem.value = elemOptions.value;
+            // Create Raphael paper
+            self.paper = new Raphael(self.$map[0], self.mapConf.width, self.mapConf.height);
 
-		// Update the label
-		if (elem.textElem) {
-			if (typeof elemOptions.text != "undefined" && typeof elemOptions.text.content != "undefined" && elemOptions.text.content != elem.textElem.attrs.text)
-				elem.textElem.attr({text : elemOptions.text.content});
+            // issue #135: Check for Raphael bug on text element boundaries
+            if (self.isRaphaelBBoxBugPresent() === true) {
+                self.destroy();
+                throw new Error("Can't get boundary box for text (is your container hidden? See #135)");
+            }
 
-			bbox = elem.mapElem.getBBox();
+            // add plugin class name on element
+            self.$container.addClass(pluginName);
 
-			if (elemOptions.size || (elemOptions.width && elemOptions.height)) {
-				if (elemOptions.type == "image" || elemOptions.type == "svg") {
-					plotOffsetX = (elemOptions.width - bbox.width) / 2;
-					plotOffsetY = (elemOptions.height - bbox.height) / 2;
-				} else {
-					plotOffsetX = (elemOptions.size - bbox.width) / 2;
-					plotOffsetY = (elemOptions.size - bbox.height) / 2;
-				}
-				bbox.x -= plotOffsetX;
-				bbox.x2 += plotOffsetX;
-				bbox.y -= plotOffsetY;
-				bbox.y2 += plotOffsetY;
-			}
+            if (self.options.map.tooltip.css) self.$tooltip.css(self.options.map.tooltip.css);
+            self.paper.setViewBox(0, 0, self.mapConf.width, self.mapConf.height, false);
 
-			textPosition = $.fn.mapael.getTextPosition(bbox, elemOptions.text.position, elemOptions.text.margin);
-			if (textPosition.x != elem.textElem.attrs.x || textPosition.y != elem.textElem.attrs.y) {
-				if (animDuration > 0) {
-					elem.textElem.attr({"text-anchor" : textPosition.textAnchor});
-					elem.textElem.animate({x : textPosition.x, y : textPosition.y}, animDuration);
-				} else
-					elem.textElem.attr({x : textPosition.x, y : textPosition.y, "text-anchor" : textPosition.textAnchor});
-			}
-			
-			$.fn.mapael.setHoverOptions(elem.textElem, elemOptions.text.attrs, elemOptions.text.attrsHover);
-			if (animDuration > 0)
-				elem.textElem.animate(elemOptions.text.attrs, animDuration);
-			else
-				elem.textElem.attr(elemOptions.text.attrs);
-		}
-		
-		// Update elements attrs and attrsHover
-		$.fn.mapael.setHoverOptions(elem.mapElem, elemOptions.attrs, elemOptions.attrsHover);
-		if (animDuration > 0)
-			elem.mapElem.animate(elemOptions.attrs, animDuration);
-		else
-			elem.mapElem.attr(elemOptions.attrs);
+            // Draw map areas
+            $.each(self.mapConf.elems, function (id) {
+                var elemOptions = self.getElemOptions(
+                    self.options.map.defaultArea,
+                    (self.options.areas[id] ? self.options.areas[id] : {}),
+                    self.options.legend.area
+                );
+                self.areas[id] = {"mapElem": self.paper.path(self.mapConf.elems[id]).attr(elemOptions.attrs)};
+            });
 
-		// Update dimensions of SVG plots
-		if (elemOptions.type == "svg") {
-			elem.mapElem.transform("m"+(elemOptions.width / elem.mapElem.originalWidth)+",0,0,"+(elemOptions.height / elem.mapElem.originalHeight)+","+bbox.x+","+bbox.y);
-		}
+            // Hook that allows to add custom processing on the map
+            if (self.options.map.beforeInit) self.options.map.beforeInit(self.$container, self.paper, self.options);
 
-		// Update the tooltip
-		if (elemOptions.tooltip) {
-			if (typeof elem.mapElem.tooltip == "undefined") {
-				$.fn.mapael.setTooltip(elem.mapElem, $tooltip);
-				(elem.textElem) && $.fn.mapael.setTooltip(elem.textElem, $tooltip);
-			}
-			elem.mapElem.tooltip = elemOptions.tooltip;
-			(elem.textElem) && (elem.textElem.tooltip = elemOptions.tooltip);
-		}
-		
-		// Update the link
-		if (typeof elemOptions.href != "undefined") {
-			if (typeof elem.mapElem.href == "undefined") {
-				$.fn.mapael.setHref(elem.mapElem);
-				(elem.textElem) && $.fn.mapael.setHref(elem.textElem);
-			}
-			elem.mapElem.href = elemOptions.href;
-			elem.mapElem.target = elemOptions.target;
-			if (elem.textElem) {
-				elem.textElem.href = elemOptions.href;
-				elem.textElem.target = elemOptions.target;
-			}
-		}
-	};
-	
-	/**
-	* Draw the plot
-	*/
-	$.fn.mapael.drawPlot = function(id, options, mapConf, paper, $tooltip) {
-		var plot = {}
-			, coords = {}
-			, elemOptions = $.fn.mapael.getElemOptions(
-				options.map.defaultPlot
-				, (options.plots[id] ? options.plots[id] : {})
-				, options.legend.plot
-			);
-		
-		if (typeof elemOptions.x != "undefined" && typeof elemOptions.y != "undefined")
-			coords = {x : elemOptions.x, y : elemOptions.y};
-		else
-			coords = mapConf.getCoords(elemOptions.latitude, elemOptions.longitude);
-		
-		if (elemOptions.type == "square") {
-			plot = {"mapElem" : paper.rect(
-				coords.x - (elemOptions.size / 2)
-				, coords.y - (elemOptions.size / 2)
-				, elemOptions.size
-				, elemOptions.size
-			).attr(elemOptions.attrs)};
-		} else if (elemOptions.type == "image") {
-			plot = {
-				"mapElem" : paper.image(
-					elemOptions.url
-					, coords.x - elemOptions.width / 2
-					, coords.y - elemOptions.height / 2
-					, elemOptions.width
-					, elemOptions.height
-				).attr(elemOptions.attrs)
-			};
-		} else if (elemOptions.type == "svg") {
-			plot = {"mapElem" : paper.path(elemOptions.path).attr(elemOptions.attrs)};
-			plot.mapElem.originalWidth = plot.mapElem.getBBox().width;
-			plot.mapElem.originalHeight = plot.mapElem.getBBox().height;
-			plot.mapElem.transform("m"+(elemOptions.width / plot.mapElem.originalWidth)+",0,0,"+(elemOptions.height / plot.mapElem.originalHeight)+","+(coords.x - elemOptions.width / 2)+","+(coords.y - elemOptions.height / 2));
-		} else { // Default = circle
-			plot = {"mapElem" : paper.circle(coords.x, coords.y, elemOptions.size / 2).attr(elemOptions.attrs)};
-		}
-		
-		$.fn.mapael.initElem(paper, plot, elemOptions, $tooltip, id);
-		return plot;
-	};
-	
-	/**
-	* Set target link on elem
-	*/
-	$.fn.mapael.setHref = function(elem) {
-		elem.attr({cursor : "pointer"});
-		$(elem.node).bind("click", function() {
-			if (!$.fn.mapael.panning && elem.href)
-				window.open(elem.href, elem.target);
-		});
-	};
-	
-	/**
-	* Set a tooltip for the areas and plots
-	* @param elem area or plot element
-	* @param $tooltip the tooltip container
-	* @param content the content to set in the tooltip
-	*/
-	$.fn.mapael.setTooltip = function(elem, $tooltip) {
-		var tooltipTO = 0, $container = $tooltip.parent(), cssClass = $tooltip.attr('class');
-	
-		$(elem.node).on("mouseover", function(e) {
-			tooltipTO = setTimeout(
-				function() {
-					$tooltip.attr("class", cssClass);
-					if (typeof elem.tooltip != "undefined") {
-						if (typeof elem.tooltip.content != "undefined") {
-							$tooltip.html(elem.tooltip.content).css("display", "block");
-						}
-						if (typeof elem.tooltip.cssClass != "undefined") {
-							$tooltip.addClass(elem.tooltip.cssClass);
-						} 
-					}
-					$tooltip.css({
-						"left" : Math.min($container.offset().left + $container.width() - $tooltip.outerWidth() - 5, e.pageX + 10) - $(window).scrollLeft(),
-						"top" : Math.min($container.offset().top + $container.height() - $tooltip.outerHeight() - 5, e.pageY + 20) - $(window).scrollTop()
-					});
-				}
-				, 120
-			);
-		}).on("mouseout", function(e) {
-			clearTimeout(tooltipTO);
-			$tooltip.css("display", "none");
-		}).on("mousemove", function(e) {
-			$tooltip.css({
-				"left" : Math.min($container.offset().left + $container.width() - $tooltip.outerWidth() - 5, e.pageX + 10) - $(window).scrollLeft(),
-				"top" : Math.min($container.offset().top + $container.height() - $tooltip.outerHeight() - 5 , e.pageY + 20)- $(window).scrollTop()
-			});
-		});
-	};
-	
-	/**
-	* Set user defined handlers for events on areas and plots
-	* @param id the id of the element
-	* @param elemOptions the element parameters
-	* @param mapElem the map element to set callback on
-	* @param textElem the optional text within the map element
-	*/
-	$.fn.mapael.setEventHandlers = function(id, elemOptions, mapElem, textElem) {
-		for(var event in elemOptions.eventHandlers) {
-			(function(event) {
-				$(mapElem.node).on(event, function(e) {!$.fn.mapael.panning && elemOptions.eventHandlers[event](e, id, mapElem, textElem, elemOptions)});
-				textElem && $(textElem.node).on(event, function(e) {!$.fn.mapael.panning && elemOptions.eventHandlers[event](e, id, mapElem, textElem, elemOptions)});
-			})(event);
-		}
-	};
-	
-	$.fn.mapael.panning = false;
-	$.fn.mapael.panningTO = 0;
-	
-	/**
-	* Init zoom and panning for the map
-	* @param $container
-	* @param paper
-	* @param mapWidth
-	* @param mapHeight
-	* @param options
-	*/
-	$.fn.mapael.initZoom = function($container, paper, mapWidth, mapHeight, options) {
-		var $parentContainer = $container.parent()
-			, $zoomIn = $("<div>").addClass(options.zoomInCssClass).html("+")
-			, $zoomOut = $("<div>").addClass(options.zoomOutCssClass).html("&#x2212;")
-			, mousedown = false
-			, previousX = 0
-			, previousY = 0;
-		
-		// Zoom
-		$parentContainer.data("zoomLevel", 0).data({"panX" : 0, "panY" : 0});
-		$container.append($zoomIn).append($zoomOut);
-		
-		$zoomIn.on("click", function() {$parentContainer.trigger("zoom", {"level" : $parentContainer.data("zoomLevel") + 1});});
-		$zoomOut.on("click", function() {$parentContainer.trigger("zoom", {"level" : $parentContainer.data("zoomLevel") - 1});});
-		
-		// Panning
-		$("body").on("mouseup" + (options.touch ? " touchend" : ""), function(e) {
-			mousedown = false;
-			setTimeout(function () {$.fn.mapael.panning = false;}, 50);
-		});
-		
-		$container.on("mousedown" + (options.touch ? " touchstart" : ""), function(e) {
-			if (typeof e.pageX !== 'undefined') {
-				mousedown = true;
-				previousX = e.pageX;
-				previousY = e.pageY;
-			} else {
-				if (e.originalEvent.touches.length === 1) {
-					mousedown = true;
-					previousX = e.originalEvent.touches[0].pageX;
-					previousY = e.originalEvent.touches[0].pageY;
-				}
-			}
-		}).on("mousemove" + (options.touch ? " touchmove" : ""), function(e) {
-			var currentLevel = $parentContainer.data("zoomLevel")
-				, pageX = 0
-				, pageY = 0;
+            // Init map areas in a second loop (prevent texts to be hidden by map elements)
+            $.each(self.mapConf.elems, function (id) {
+                var elemOptions = self.getElemOptions(
+                    self.options.map.defaultArea,
+                    (self.options.areas[id] ? self.options.areas[id] : {}),
+                    self.options.legend.area
+                );
+                self.initElem(self.areas[id], elemOptions, id);
+            });
 
-			if (typeof e.pageX !== 'undefined') {
-				pageX = e.pageX;
-				pageY = e.pageY;
-			} else {
-				if (e.originalEvent.touches.length === 1) {
-					pageX = e.originalEvent.touches[0].pageX;
-					pageY = e.originalEvent.touches[0].pageY;
-				} else {
-					mousedown = false;
-				}
-			}
+            // Draw links
+            self.links = self.drawLinksCollection(self.options.links);
 
-			if (mousedown && currentLevel != 0) {
-				var offsetX = (previousX - pageX) / (1 + (currentLevel * options.step)) * (mapWidth / paper.width)
-					, offsetY = (previousY - pageY) / (1 + (currentLevel * options.step)) * (mapHeight / paper.height)
-					, panX = Math.min(Math.max(0, paper._viewBox[0] + offsetX), (mapWidth - paper._viewBox[2]))
-					, panY = Math.min(Math.max(0, paper._viewBox[1] + offsetY), (mapHeight - paper._viewBox[3]));					
-				
-				if (Math.abs(offsetX) > 5 || Math.abs(offsetY) > 5) {
-					$parentContainer.data({"panX" : panX, "panY" : panY, "zoomX" : panX + paper._viewBox[2] / 2, "zoomY" : panY + paper._viewBox[3] / 2});
-					
-					paper.setViewBox(panX, panY, paper._viewBox[2], paper._viewBox[3]);
+            // Draw plots
+            $.each(self.options.plots, function (id) {
+                self.plots[id] = self.drawPlot(id);
+            });
 
-					clearTimeout($.fn.mapael.panningTO);
-					$.fn.mapael.panningTO = setTimeout(function(){$container.trigger("afterPanning", {x1 : panX, y1 : panY, x2 : (panX+paper._viewBox[2]), y2 : (panY+paper._viewBox[3])});}, 150);
+            // Attach zoom event
+            self.$container.on("zoom." + pluginName, function (e, zoomOptions) {
+                self.onZoomEvent(e, zoomOptions);
+            });
 
-					previousX = pageX;
-					previousY = pageY;
-					$.fn.mapael.panning = true;
-				}
-				return false;
-			}
-		});
-	};
-	
-	/**
-	* Draw a legend for areas and / or plots
-	* @param legendOptions options for the legend to draw
-	* @param $container the map container
-	* @param options map options object
-	* @param legendType the type of the legend : "area" or "plot"
-	* @param elems collection of plots or areas on the maps
-	* @param legendIndex index of the legend in the conf array
-	*/
-	$.fn.mapael.drawLegend = function (legendOptions, $container, options, legendType, elems, scale, legendIndex) {
-		var $legend = {}
-			, paper = {}
-			, width = 0
-			, height = 0
-			, title = {}
-			, elem = {}
-			, elemBBox = {}
-			, label = {}
-			, i = 0
-			, x = 0
-			, y = 0
-			, yCenter = 0
-			, sliceAttrs = []
-			, length = 0;
-		
-			if (!legendOptions.slices || !legendOptions.display)
-				return;
-				
-			$legend = $("." + legendOptions.cssClass, $container).empty();
-			paper = new Raphael($legend.get(0));
-			height = width = 0;
-			
-			// Set the title of the legend
-			if(legendOptions.title) {
-				title = paper.text(legendOptions.marginLeftTitle, 0, legendOptions.title).attr(legendOptions.titleAttrs);
-				title.attr({y : 0.5 * title.getBBox().height});
-					
-				width = legendOptions.marginLeftTitle + title.getBBox().width;
-				height += legendOptions.marginBottomTitle + title.getBBox().height;
-			}
-			
-			// Calculate attrs (and width, height and r (radius)) for legend elements, and yCenter for horizontal legends
-			for(i = 0, length = legendOptions.slices.length; i < length; ++i) {
-				if (typeof legendOptions.slices[i].legendSpecificAttrs == "undefined")
-					legendOptions.slices[i].legendSpecificAttrs = {};
-					
-				sliceAttrs[i] = $.extend(
-					{}
-					, (legendType == "plot") ? options.map["defaultPlot"].attrs : options.map["defaultArea"].attrs
-					, legendOptions.slices[i].attrs
-					, legendOptions.slices[i].legendSpecificAttrs
-				);
-			
-				if (legendType == "area") {
-					if (typeof sliceAttrs[i].width == "undefined")
-						sliceAttrs[i].width = 30;
-					if (typeof sliceAttrs[i].height == "undefined")
-						sliceAttrs[i].height = 20;
-				} else if (legendOptions.slices[i].type == "square") {
-					if (typeof sliceAttrs[i].width == "undefined")
-						sliceAttrs[i].width = legendOptions.slices[i].size;
-					if (typeof sliceAttrs[i].height == "undefined")
-						sliceAttrs[i].height = legendOptions.slices[i].size;
-				} else if (legendOptions.slices[i].type == "image" || legendOptions.slices[i].type == "svg") {
-					if (typeof sliceAttrs[i].width == "undefined")
-						sliceAttrs[i].width = legendOptions.slices[i].width;
-					if (typeof sliceAttrs[i].height == "undefined")
-						sliceAttrs[i].height = legendOptions.slices[i].height;
-				} else {
-					if (typeof sliceAttrs[i].r == "undefined")
-						sliceAttrs[i].r = legendOptions.slices[i].size / 2;
-				}
-				
-				if(legendType == "plot" && (typeof legendOptions.slices[i].type == "undefined" || legendOptions.slices[i].type == "circle")) {
-					yCenter = Math.max(yCenter, legendOptions.marginBottomTitle + title.getBBox().height + scale * sliceAttrs[i].r);	
-				} else {
-					yCenter = Math.max(yCenter, legendOptions.marginBottomTitle + title.getBBox().height + scale * sliceAttrs[i].height/2);
-				}
-			}
-				
-			if (legendOptions.mode == "horizontal") {
-				width = legendOptions.marginLeft;
-			}
-			
-			// Draw legend elements (circle, square or image in vertical or horizontal mode)
-			for(i = 0, length = legendOptions.slices.length; i < length; ++i) {
-				if (typeof legendOptions.slices[i].display == "undefined" || legendOptions.slices[i].display == true) {
-					if(legendType == "area") {
-						if (legendOptions.mode == "horizontal") {
-							x = width + legendOptions.marginLeft;
-							y = yCenter - (0.5 * scale * sliceAttrs[i].height);
-						} else {
-							x = legendOptions.marginLeft;
-							y = height;
-						}
-						
-						elem = paper.rect(x, y, scale * (sliceAttrs[i].width), scale * (sliceAttrs[i].height));
-					} else if(legendOptions.slices[i].type == "square") {					
-						if (legendOptions.mode == "horizontal") {
-							x = width + legendOptions.marginLeft;
-							y = yCenter - (0.5 * scale * sliceAttrs[i].height);
-						} else {
-							x = legendOptions.marginLeft;
-							y = height;
-						}
-						
-						elem = paper.rect(x, y, scale * (sliceAttrs[i].width), scale * (sliceAttrs[i].height));
-							
-					} else if(legendOptions.slices[i].type == "image" || legendOptions.slices[i].type == "svg") {					
-						if (legendOptions.mode == "horizontal") {
-							x = width + legendOptions.marginLeft;
-							y = yCenter - (0.5 * scale * sliceAttrs[i].height);
-						} else {
-							x = legendOptions.marginLeft;
-							y = height;
-						}
+            if (self.options.map.zoom.enabled) {
+                // Enable zoom
+                self.initZoom(self.mapConf.width, self.mapConf.height, self.options.map.zoom);
+            }
 
-						if (legendOptions.slices[i].type == "image") {
-							elem = paper.image(
-								legendOptions.slices[i].url, x, y, scale * sliceAttrs[i].width, scale * sliceAttrs[i].height);
-						} else {
-							elem = paper.path(legendOptions.slices[i].path);
-							elem.transform("m"+((scale*legendOptions.slices[i].width) / elem.getBBox().width)+",0,0,"+((scale*legendOptions.slices[i].height) / elem.getBBox().height)+","+x+","+y);
-						}
-					} else {
-						if (legendOptions.mode == "horizontal") {
-							x = width + legendOptions.marginLeft + scale * (sliceAttrs[i].r);
-							y = yCenter;
-						} else {
-							x = legendOptions.marginLeft + scale * (sliceAttrs[i].r);
-							y = height + scale * (sliceAttrs[i].r);
-						}
-						elem = paper.circle(x, y, scale * (sliceAttrs[i].r));
-					}
-					
-					// Set attrs to the element drawn above
-					delete sliceAttrs[i].width;
-					delete sliceAttrs[i].height;
-					delete sliceAttrs[i].r;
-					elem.attr(sliceAttrs[i]);
-					elemBBox = elem.getBBox();
+            // Set initial zoom
+            if (self.options.map.zoom.init !== undefined) {
+                if (self.options.map.zoom.init.animDuration === undefined) {
+                    self.options.map.zoom.init.animDuration = 0;
+                }
+                self.$container.trigger("zoom." + pluginName, self.options.map.zoom.init);
+            }
 
-					// Draw the label associated with the element
-					if (legendOptions.mode == "horizontal") {
-						x = width + legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel;
-						y = yCenter;
-					} else {
-						x = legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel;
-						y = height + (elemBBox.height / 2);
-					}
-					
-					label = paper.text(x, y, legendOptions.slices[i].label).attr(legendOptions.labelAttrs);
-					
-					// Update the width and height for the paper
-					if (legendOptions.mode == "horizontal") {
-						width += legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel + label.getBBox().width;
-						if(legendOptions.slices[i].type == "image" || legendType == "area") {
-							height = Math.max(height, legendOptions.marginBottom + title.getBBox().height + elemBBox.height);
-						} else {
-							height = Math.max(height, legendOptions.marginBottomTitle + legendOptions.marginBottom + title.getBBox().height + elemBBox.height);
-						}
-					} else {
-						width = Math.max(width, legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel + label.getBBox().width);
-						height += legendOptions.marginBottom + elemBBox.height;
-					}
-					
-					$(elem.node).attr({"data-type": "elem", "data-index": i, "data-hidden": 0});
-					$(label.node).attr({"data-type": "label", "data-index": i, "data-hidden": 0});
-					
-					// Hide map elements when the user clicks on a legend item
-					if (legendOptions.hideElemsOnClick.enabled) {
-						// Hide/show elements when user clicks on a legend element
-						label.attr({cursor:"pointer"});
-						elem.attr({cursor:"pointer"});
-						
-						$.fn.mapael.setHoverOptions(elem, sliceAttrs[i], sliceAttrs[i]);
-						$.fn.mapael.setHoverOptions(label, legendOptions.labelAttrs, legendOptions.labelAttrsHover);
-						$.fn.mapael.setHover(paper, elem, label);
-						$.fn.mapael.handleClickOnLegendElem($container, legendOptions, legendOptions.slices[i], label, elem, elems, legendIndex);
-					}
-				}
-			}
-		
-			// VMLWidth option allows you to set static width for the legend
-			// only for VML render because text.getBBox() returns wrong values on IE6/7
-			if (Raphael.type != "SVG" && legendOptions.VMLWidth)
-				width = legendOptions.VMLWidth;
-			
-			paper.setSize(width, height);
-			return paper;
-	};
-	
-	/**
-	* Allow to hide elements of the map when the user clicks on a related legend item
-	* @param $container the map container
-	* @param legendOptions options for the legend to draw
-	* @param sliceOptions options of the slice
-	* @param label label of the legend item
-	* @param elem element of the legend item
-	* @param elems collection of plots or areas displayed on the map
-	* @param legendIndex index of the legend in the conf array
-	*/
-	$.fn.mapael.handleClickOnLegendElem = function($container, legendOptions, sliceOptions, label, elem, elems, legendIndex) {
-		var hideMapElems = function(e, hideOtherElems) {
-			var elemValue = 0
-				, hidden = $(label.node).attr('data-hidden')
-				, hiddenNewAttr = (hidden == 0) ? {"data-hidden": 1} : {"data-hidden": 0};
+            // Create the legends for areas
+            self.createLegends("area", self.areas, 1);
 
-			if (hidden == 0) {
-				label.animate({"opacity":0.5}, 300);
-			} else {
-				label.animate({"opacity":1}, 300);
-			}
-			
-			for (var id in elems) {
-				if ($.isArray(elems[id].value)) {
-					elemValue = elems[id].value[legendIndex];
-				} else {
-					elemValue = elems[id].value;
-				}
-				
-				if ((typeof sliceOptions.sliceValue != "undefined" && elemValue == sliceOptions.sliceValue)
-					|| ((typeof sliceOptions.sliceValue == "undefined")
-						&& (typeof sliceOptions.min == "undefined" || elemValue >= sliceOptions.min)
-						&& (typeof sliceOptions.max == "undefined" || elemValue < sliceOptions.max))
-				) {
-					(function(id) {
-						if (hidden == 0) {
-							elems[id].mapElem.animate({"opacity":legendOptions.hideElemsOnClick.opacity}, 300, "linear", function() {(legendOptions.hideElemsOnClick.opacity == 0) && elems[id].mapElem.hide();});
-							elems[id].textElem && elems[id].textElem.animate({"opacity":legendOptions.hideElemsOnClick.opacity}, 300, "linear", function() {(legendOptions.hideElemsOnClick.opacity == 0) && elems[id].textElem.hide();});
-						} else {
-							if (legendOptions.hideElemsOnClick.opacity == 0) {
-								elems[id].mapElem.show();
-								elems[id].textElem && elems[id].textElem.show();
-							}
-							elems[id].mapElem.animate({"opacity":typeof elems[id].mapElem.originalAttrs.opacity != "undefined" ? elems[id].mapElem.originalAttrs.opacity : 1}, 300);
-							elems[id].textElem && elems[id].textElem.animate({"opacity":typeof elems[id].textElem.originalAttrs.opacity != "undefined" ? elems[id].textElem.originalAttrs.opacity : 1}, 300);
-						}
-					})(id);
-				}
-			}
+            // Attach update event
+            self.$container.on("update." + pluginName, function (e, opt) {
+                self.onUpdateEvent(e, opt);
+            });
 
-			$(elem.node).attr(hiddenNewAttr);
-			$(label.node).attr(hiddenNewAttr);
+            // Attach showElementsInRange event
+            self.$container.on("showElementsInRange." + pluginName, function (e, opt) {
+                self.onShowElementsInRange(e, opt);
+            });
 
-			if ((typeof hideOtherElems === "undefined" || hideOtherElems === true) 
-				&& typeof legendOptions.exclusive !== "undefined" && legendOptions.exclusive === true
-			) {
-				$("[data-type='elem'][data-hidden=0]", $container).each(function() {
-					if ($(this).attr('data-index') !== $(elem.node).attr('data-index')) {
-						$(this).trigger('click', false);
-					}
-				});
-			}
-		};
-		$(label.node).on("click", hideMapElems);
-		$(elem.node).on("click", hideMapElems);
+            // Handle map size
+            if (self.options.map.width) {
+                // NOT responsive: map has a fixed width
+                self.paper.setSize(self.options.map.width, self.mapConf.height * (self.options.map.width / self.mapConf.width));
 
-		if (typeof sliceOptions.clicked !== "undefined" && sliceOptions.clicked === true) {
-			$(elem.node).trigger('click', false);
-		}
-	};
-	
-	/**
-	* Create all legends for a specified type (area or plot)
-	* @param $container the map container
-	* @param options map options
-	* @param legendType the type of the legend : "area" or "plot"
-	* @param elems collection of plots or areas displayed on the map
-	* @param scale scale ratio of the map
-	*/
-	$.fn.mapael.createLegends = function ($container, options, legendType, elems, scale) {
-		var legends = [];
-		
-		if ($.isArray(options.legend[legendType])) {
-			for (var j = 0; j < options.legend[legendType].length; ++j) {
-				legends.push($.fn.mapael.drawLegend(options.legend[legendType][j], $container, options, legendType, elems, scale, j));
-			}
-		} else {
-			legends.push($.fn.mapael.drawLegend(options.legend[legendType], $container, options, legendType, elems, scale));
-		}
-		return legends;
-	};
-	
-	/**
-	* Set the attributes on hover and the attributes to restore for a map element
-	* @param elem the map element
-	* @param originalAttrs the original attributes to restore on mouseout event
-	* @param attrsHover the attributes to set on mouseover event
-	*/
-	$.fn.mapael.setHoverOptions = function (elem, originalAttrs, attrsHover) {
-		// Disable transform option on hover for VML (IE<9) because of several bugs
-		if (Raphael.type != "SVG") delete attrsHover.transform;
-		elem.attrsHover = attrsHover;
-		
-		if (elem.attrsHover.transform) elem.originalAttrs = $.extend({transform : "s1"}, originalAttrs);
-		else elem.originalAttrs = originalAttrs;
-	};
-	
-	/**
-	* Set the hover behavior (mouseover & mouseout) for plots and areas
-	* @param paper Raphael paper object
-	* @param mapElem the map element
-	* @param textElem the optional text element (within the map element)
-	*/
-	$.fn.mapael.setHover = function (paper, mapElem, textElem) {
-		var $mapElem = {}
-			, $textElem = {}
-			, hoverTO = 0
-			, overBehaviour = function() {hoverTO = setTimeout(function () {$.fn.mapael.elemHover(paper, mapElem, textElem);}, 120);}
-			, outBehaviour = function () {clearTimeout(hoverTO);$.fn.mapael.elemOut(paper, mapElem, textElem);};
-			
-		$mapElem = $(mapElem.node);
-		$mapElem.on("mouseover", overBehaviour);
-		$mapElem.on("mouseout", outBehaviour);
-		
-		if (textElem) {
-			$textElem = $(textElem.node);
-			$textElem.on("mouseover", overBehaviour);
-			$(textElem.node).on("mouseout", outBehaviour);
-		}
-	};
-	
-	/**
-	* Set he behaviour for "mouseover" event
-	* @param paper paper Raphael paper object
-	* @param mapElem mapElem the map element
-	* @param textElem the optional text element (within the map element)
-	*/
-	$.fn.mapael.elemHover = function (paper, mapElem, textElem) {
-		mapElem.animate(mapElem.attrsHover, mapElem.attrsHover.animDuration);
-		textElem && textElem.animate(textElem.attrsHover, textElem.attrsHover.animDuration);
-		paper.safari();
-	};
-	
-	/**
-	* Set he behaviour for "mouseout" event
-	* @param paper Raphael paper object
-	* @param mapElem the map element
-	* @param textElem the optional text element (within the map element)
-	*/
-	$.fn.mapael.elemOut = function (paper, mapElem, textElem) {
-		mapElem.animate(mapElem.originalAttrs, mapElem.attrsHover.animDuration);
-		textElem && textElem.animate(textElem.originalAttrs, textElem.attrsHover.animDuration);
-		paper.safari();
-	};
-	
-	/**
-	* Get element options by merging default options, element options and legend options
-	* @param defaultOptions
-	* @param elemOptions
-	* @param legendOptions
-	*/
-	$.fn.mapael.getElemOptions = function(defaultOptions, elemOptions, legendOptions) {
-		var options = $.extend(true, {}, defaultOptions, elemOptions);
-		if (typeof options.value != "undefined") {
-			if ($.isArray(legendOptions)) {
-				for (var i = 0, length = legendOptions.length;i<length;++i) {
-					options = $.extend(true, {}, options, $.fn.mapael.getLegendSlice(options.value[i], legendOptions[i]));
-				}
-			} else {
-				options = $.extend(true, {}, options, $.fn.mapael.getLegendSlice(options.value, legendOptions));
-			}
-		}
-		return options;
-	};
-	
-	/**
-	* Get the coordinates of the text relative to a bbox and a position
-	* @param bbox the boundary box of the element
-	* @param textPosition the wanted text position (inner, right, left, top or bottom)
-	*/
-	$.fn.mapael.getTextPosition = function(bbox, textPosition, margin) {
-		var textX = 0
-			, textY = 0
-			, textAnchor = "";
-			
-		switch (textPosition) {
-			case "bottom" :
-				textX = (bbox.x + bbox.x2) / 2;
-				textY = bbox.y2 + margin;
-				textAnchor = "middle";
-				break;
-			case "top" :
-				textX = (bbox.x + bbox.x2) / 2;
-				textY = bbox.y - margin;
-				textAnchor = "middle";
-				break;
-			case "left" :
-				textX = bbox.x - margin;
-				textY = (bbox.y + bbox.y2) / 2;
-				textAnchor = "end";
-				break;
-			case "right" :
-				textX = bbox.x2 + margin;
-				textY = (bbox.y + bbox.y2) / 2;
-				textAnchor = "start";
-				break;
-			default : // "inner" position
-				textX = (bbox.x + bbox.x2) / 2;
-				textY = (bbox.y + bbox.y2) / 2;
-				textAnchor = "middle";
-		}
-		return {"x" : textX, "y" : textY, "textAnchor" : textAnchor};
-	};
-	
-	/**
-	* Get the legend conf matching with the value
-	* @param value the value to match with a slice in the legend
-	* @param legend the legend params object
-	* @return the legend slice matching with the value
-	*/
-	$.fn.mapael.getLegendSlice = function (value, legend) {
-		for(var i = 0, length = legend.slices.length; i < length; ++i) {
-			if ((typeof legend.slices[i].sliceValue != "undefined" && value == legend.slices[i].sliceValue)
-				|| ((typeof legend.slices[i].sliceValue == "undefined")
-					&& (typeof legend.slices[i].min == "undefined" || value >= legend.slices[i].min)
-					&& (typeof legend.slices[i].max == "undefined" || value < legend.slices[i].max))
-			) {
-				return legend.slices[i];
-			}
-		}
-		return {};
-	};
+                // Create the legends for plots taking into account the scale of the map
+                self.createLegends("plot", self.plots, (self.options.map.width / self.mapConf.width));
+            } else {
+                // Responsive: handle resizing of the map
+                self.handleMapResizing();
+            }
 
-	$.fn.mapael.animationIntervalID = null;
+            // Hook that allows to add custom processing on the map
+            if (self.options.map.afterInit) self.options.map.afterInit(self.$container, self.paper, self.areas, self.plots, self.options);
 
-	/**
-	 * Animated view box changes
-	 * As from http://code.voidblossom.com/animating-viewbox-easing-formulas/,
-	 * (from https://github.com/theshaun works on mapael)
-	 * @param paper paper Raphael paper object
-	 * @param x coordinate of the point to focus on
-	 * @param y coordinate of the point to focus on
-	 * @param w map defined width
-	 * @param h map defined height
-	 * @param duration defined length of time for animation
-	 * @param easying_function defined Raphael supported easing_formula to use
-	 * @param callback method when animated action is complete
-	 */
-	$.fn.mapael.animateViewBox = function animateViewBox($container, paper, x, y, w, h, duration, easingFunction ) {
-		var cx = paper._viewBox ? paper._viewBox[0] : 0
-			, dx = x - cx
-			, cy = paper._viewBox ? paper._viewBox[1] : 0
-			, dy = y - cy
-			, cw = paper._viewBox ? paper._viewBox[2] : paper.width
-			, dw = w - cw
-			, ch = paper._viewBox ? paper._viewBox[3] : paper.height
-			, dh = h - ch
-			, easingFunction = easingFunction || "linear"
-			, interval = 25
-			, steps = duration / interval
-			, current_step = 0
-			, easingFormula = Raphael.easing_formulas[easingFunction];
+            $(self.paper.desc).append(" and Mapael " + self.version + " (http://www.vincentbroute.fr/mapael/)");
+        },
 
-		clearInterval($.fn.mapael.animationIntervalID);
-	 
-		$.fn.mapael.animationIntervalID = setInterval(function() {
-				var ratio = current_step / steps;
-				paper.setViewBox(cx + dx * easingFormula(ratio),
-								cy + dy * easingFormula(ratio),
-								cw + dw * easingFormula(ratio),
-								ch + dh * easingFormula(ratio), false);
-				if (current_step++ >= steps) {
-					clearInterval($.fn.mapael.animationIntervalID);
-					clearTimeout($.fn.mapael.zoomTO);
-					$.fn.mapael.zoomTO = setTimeout(function(){$container.trigger("afterZoom", {x1 : x, y1 : y, x2 : (x+w), y2 : (y+h)});}, 150);
-				}
-			}
-			, interval
-		);
-	};
-	
-	// Default map options
-	$.fn.mapael.defaultOptions = {
-		map : {
-			cssClass : "map"
-			, tooltip : {
-				cssClass : "mapTooltip",
-				target: null
-			}
-			, defaultArea : {
-				attrs : {
-					fill : "#343434"
-					, stroke : "#5d5d5d"
-					, "stroke-width" : 1
-					, "stroke-linejoin" : "round"
-				}
-				, attrsHover : {
-					fill : "#f38a03"
-					, animDuration : 300
-				}
-				, text : {
-					position : "inner"
-					, margin : 10
-					, attrs : {
-						"font-size" : 15
-						, fill : "#c7c7c7"
-					}
-					, attrsHover : {
-						fill : "#eaeaea"
-						, "animDuration" : 300
-					}
-				}
-				, target : "_self"
-			}
-			, defaultPlot : {
-				type : "circle"
-				, size : 15
-				, attrs : {
-					fill : "#0088db"
-					, stroke : "#fff"
-					, "stroke-width" : 0
-					, "stroke-linejoin" : "round"
-				}
-				, attrsHover : {
-					"stroke-width" : 3
-					, animDuration : 300
-				}
-				, text : {
-					position : "right"
-					, margin : 10
-					, attrs : {
-						"font-size" : 15
-						, fill : "#c7c7c7"
-					}
-					, attrsHover : {
-						fill : "#eaeaea"
-						, animDuration : 300
-					}
-				}
-				, target : "_self"
-			}
-			, defaultLink : {
-				factor : 0.5
-				, attrs : {
-					stroke : "#0088db"
-					, "stroke-width" : 2
-				}
-				, attrsHover : {
-					animDuration : 300
-				}
-				, text : {
-					position : "inner"
-					, margin : 10
-					, attrs : {
-						"font-size" : 15
-						, fill : "#c7c7c7"
-					}
-					, attrsHover : {
-						fill : "#eaeaea"
-						, animDuration : 300
-					}
-				}
-				, target : "_self"
-			}
-			, zoom : {
-				enabled : false
-				, maxLevel : 10
-				, step : 0.25
-				, zoomInCssClass : "zoomIn"
-				, zoomOutCssClass : "zoomOut"
-				, mousewheel : true
-				, touch : true
-				, animDuration : 200
-				, animEasing : "linear"
-			}
-		}
-		, legend : {
-			area : []
-			, plot : []
-		}
-		, areas : {}
-		, plots : {}
-		, links : {}
-	};
-	
-	$.fn.mapael.legendDefaultOptions = {
-		area : {
-			cssClass : "areaLegend"
-			, display : true
-			, marginLeft : 10
-			, marginLeftTitle : 5
-			, marginBottomTitle: 10
-			, marginLeftLabel : 10
-			, marginBottom : 10
-			, titleAttrs : {
-				"font-size" : 16
-				, fill : "#343434"
-				, "text-anchor" : "start"
-			}
-			, labelAttrs : {
-				"font-size" : 12
-				, fill : "#343434"
-				, "text-anchor" : "start"
-			}
-			, labelAttrsHover : {
-				fill : "#787878"
-				, animDuration : 300
-			}
-			, hideElemsOnClick : {
-				enabled : true
-				, opacity : 0.2
-			}
-			, slices : []
-			, mode : "vertical"
-		}
-		, plot : {
-			cssClass : "plotLegend"
-			, display : true
-			, marginLeft : 10
-			, marginLeftTitle : 5
-			, marginBottomTitle: 10
-			, marginLeftLabel : 10
-			, marginBottom : 10
-			, titleAttrs : {
-				"font-size" : 16
-				, fill : "#343434"
-				, "text-anchor" : "start"
-			}
-			, labelAttrs : {
-				"font-size" : 12
-				, fill : "#343434"
-				, "text-anchor" : "start"
-			}
-			, labelAttrsHover : {
-				fill : "#787878"
-				, animDuration : 300
-			}
-			, hideElemsOnClick : {
-				enabled : true
-				, opacity : 0.2
-			}
-			, slices : []
-			, mode : "vertical"
-		}
-	};
-})(jQuery);
+        /*
+         * Destroy mapael
+         * This function effectively detach mapael from the container
+         *   - Set the container back to the way it was before mapael instanciation
+         *   - Remove all data associated to it (memory can then be free'ed by browser)
+         *
+         * This method can be call directly by user:
+         *     $(".mapcontainer").data("mapael").destroy();
+         *
+         * This method is also automatically called if the user try to call mapael
+         * on a container already containing a mapael instance
+         */
+        destroy: function () {
+            var self = this;
+
+            // Detach all event listeners attached to the container
+            self.$container.off("." + pluginName);
+
+            // Empty the container (this will also detach all event listeners)
+            self.$container.empty();
+            // Detach the global resize event handler
+            if (self.onResizeEvent) $(window).off("resize." + pluginName, self.onResizeEvent);
+            // Replace initial HTML content
+            self.$container.html(self.initialHTMLContent);
+            // Remove mapael class
+            self.$container.removeClass(pluginName);
+            // Remove the data
+            self.$container.removeData(pluginName);
+            // Remove all internal reference
+            self.container = undefined;
+            self.$container = undefined;
+            self.options = undefined;
+            self.paper = undefined;
+            self.$map = undefined;
+            self.$tooltip = undefined;
+            self.mapConf = undefined;
+            self.areas = undefined;
+            self.plots = undefined;
+            self.links = undefined;
+        },
+
+        handleMapResizing: function () {
+            var self = this;
+
+            // onResizeEvent: call when the window element trigger the resize event
+            // We create it inside this function (and not in the prototype) in order to have a closure
+            // Otherwise, in the prototype, 'this' when triggered is *not* the mapael object but the global window
+            self.onResizeEvent = function () {
+                // Clear any previous setTimeout (avoid too much triggering)
+                clearTimeout(self.resizeTO);
+                // setTimeout to wait for the user to finish its resizing
+                self.resizeTO = setTimeout(function () {
+                    self.$map.trigger("resizeEnd." + pluginName);
+                }, 150);
+            };
+
+            // Attach resize handler
+            $(window).on("resize." + pluginName, self.onResizeEvent);
+
+            // Attach resize end handler, and call it once
+            self.$map.on("resizeEnd." + pluginName, function () {
+                var containerWidth = self.$map.width();
+                if (self.paper.width != containerWidth) {
+                    var newScale = containerWidth / self.mapConf.width;
+                    // Set new size
+                    self.paper.setSize(containerWidth, self.mapConf.height * newScale);
+                    // Create plots legend again to take into account the new scale
+                    self.createLegends("plot", self.plots, newScale);
+                }
+            }).trigger("resizeEnd." + pluginName);
+        },
+
+        /*
+         * Extend the user option with the default one
+         * @param options the user options
+         * @return new options object
+         */
+        extendDefaultOptions: function (options) {
+
+            // Extend default options with user options
+            options = $.extend(true, {}, Mapael.prototype.defaultOptions, options);
+
+            // Extend legend default options
+            $.each(options.legend, function (type) {
+                if ($.isArray(options.legend[type])) {
+                    for (var i = 0; i < options.legend[type].length; ++i)
+                        options.legend[type][i] = $.extend(true, {}, Mapael.prototype.legendDefaultOptions[type], options.legend[type][i]);
+                } else {
+                    options.legend[type] = $.extend(true, {}, Mapael.prototype.legendDefaultOptions[type], options.legend[type]);
+                }
+            });
+
+            return options;
+        },
+
+        /*
+         * Init the element "elem" on the map (drawing, setting attributes, events, tooltip, ...)
+         */
+        initElem: function (elem, elemOptions, id) {
+            var self = this;
+            var bbox = {};
+            var textPosition = {};
+
+            // Assign value attribute to element
+            if (elemOptions.value !== undefined){
+                elem.value = elemOptions.value;
+            }
+
+            // Init the label related to the element
+            if (elemOptions.text && elemOptions.text.content !== undefined) {
+                // Set a text label in the area
+                bbox = elem.mapElem.getBBox();
+                textPosition = self.getTextPosition(bbox, elemOptions.text.position, elemOptions.text.margin);
+                elemOptions.text.attrs["text-anchor"] = textPosition.textAnchor;
+                elem.textElem = self.paper.text(textPosition.x, textPosition.y, elemOptions.text.content).attr(elemOptions.text.attrs);
+                $(elem.textElem.node).attr("data-id", id);
+            }
+
+            // Set user event handlers
+            if (elemOptions.eventHandlers) self.setEventHandlers(id, elemOptions, elem.mapElem, elem.textElem);
+
+            // Set hover behavior only if attrsHover is set for area or for text
+            if (($.isEmptyObject(elemOptions.attrsHover) === false) ||
+                (elem.textElem && $.isEmptyObject(elemOptions.text.attrsHover) === false)) {
+                // Set hover option for mapElem
+                self.setHoverOptions(elem.mapElem, elemOptions.attrs, elemOptions.attrsHover);
+                // Set hover option for textElem
+                if (elem.textElem) self.setHoverOptions(elem.textElem, elemOptions.text.attrs, elemOptions.text.attrsHover);
+                // Set hover behavior
+                self.setHover(elem.mapElem, elem.textElem);
+            }
+
+            // Init the tooltip
+            if (elemOptions.tooltip) {
+                elem.mapElem.tooltip = elemOptions.tooltip;
+                self.setTooltip(elem.mapElem);
+
+                if (elemOptions.text && elemOptions.text.content !== undefined) {
+                    elem.textElem.tooltip = elemOptions.tooltip;
+                    self.setTooltip(elem.textElem);
+                }
+            }
+
+            // Init the link
+            if (elemOptions.href) {
+                elem.mapElem.href = elemOptions.href;
+                elem.mapElem.target = elemOptions.target;
+                self.setHref(elem.mapElem);
+
+                if (elemOptions.text && elemOptions.text.content !== undefined) {
+                    elem.textElem.href = elemOptions.href;
+                    elem.textElem.target = elemOptions.target;
+                    self.setHref(elem.textElem);
+                }
+            }
+
+            $(elem.mapElem.node).attr("data-id", id);
+        },
+
+        /*
+         * Init zoom and panning for the map
+         * @param mapWidth
+         * @param mapHeight
+         * @param zoomOptions
+         */
+        initZoom: function (mapWidth, mapHeight, zoomOptions) {
+            var self = this;
+            var mousedown = false;
+            var previousX = 0;
+            var previousY = 0;
+            var fnZoomButtons = {
+                "reset": function () {
+                    self.$container.trigger("zoom." + pluginName, {"level": 0});
+                },
+                "in": function () {
+                    self.$container.trigger("zoom." + pluginName, {"level": "+1"});
+                },
+                "out": function () {
+                    self.$container.trigger("zoom." + pluginName, {"level": -1});
+                }
+            };
+
+            // init Zoom data
+            $.extend(self.zoomData, {
+                zoomLevel: 0,
+                panX: 0,
+                panY: 0
+            });
+
+            // init zoom buttons
+            $.each(zoomOptions.buttons, function(type, opt) {
+                if (fnZoomButtons[type] === undefined) throw new Error("Unknown zoom button '" + type + "'");
+                // Create div with classes, contents and title (for tooltip)
+                var $button = $("<div>").addClass(opt.cssClass)
+                                    .html(opt.content)
+                                    .attr("title", opt.title);
+                // Assign click event
+                $button.on("click." + pluginName, fnZoomButtons[type]);
+                // Append to map
+                self.$map.append($button);
+            });
+
+            // Update the zoom level of the map on mousewheel
+            if (self.options.map.zoom.mousewheel) {
+                self.$map.on("mousewheel." + pluginName, function (e) {
+                    var zoomLevel = (e.deltaY > 0) ? 1 : -1;
+                    var coord = self.mapPagePositionToXY(e.pageX, e.pageY);
+
+                    self.$container.trigger("zoom." + pluginName, {
+                        "fixedCenter": true,
+                        "level": self.zoomData.zoomLevel + zoomLevel,
+                        "x": coord.x,
+                        "y": coord.y
+                    });
+
+                    return false;
+                });
+            }
+
+            // Update the zoom level of the map on touch pinch
+            if (self.options.map.zoom.touch) {
+                self.$map.on("touchstart." + pluginName, function (e) {
+                    if (e.originalEvent.touches.length === 2) {
+                        self.zoomCenterX = (e.originalEvent.touches[0].pageX + e.originalEvent.touches[1].pageX) / 2;
+                        self.zoomCenterY = (e.originalEvent.touches[0].pageY + e.originalEvent.touches[1].pageY) / 2;
+                        self.previousPinchDist = Math.sqrt(Math.pow((e.originalEvent.touches[1].pageX - e.originalEvent.touches[0].pageX), 2) + Math.pow((e.originalEvent.touches[1].pageY - e.originalEvent.touches[0].pageY), 2));
+                    }
+                });
+
+                self.$map.on("touchmove." + pluginName, function (e) {
+                    var pinchDist = 0;
+                    var zoomLevel = 0;
+
+                    if (e.originalEvent.touches.length === 2) {
+                        pinchDist = Math.sqrt(Math.pow((e.originalEvent.touches[1].pageX - e.originalEvent.touches[0].pageX), 2) + Math.pow((e.originalEvent.touches[1].pageY - e.originalEvent.touches[0].pageY), 2));
+
+                        if (Math.abs(pinchDist - self.previousPinchDist) > 15) {
+                            var coord = self.mapPagePositionToXY(self.zoomCenterX, self.zoomCenterY);
+                            zoomLevel = (pinchDist - self.previousPinchDist) / Math.abs(pinchDist - self.previousPinchDist);
+                            self.$container.trigger("zoom." + pluginName, {
+                                "fixedCenter": true,
+                                "level": self.zoomData.zoomLevel + zoomLevel,
+                                "x": coord.x,
+                                "y": coord.y
+                            });
+                            self.previousPinchDist = pinchDist;
+                        }
+                        return false;
+                    }
+                });
+            }
+
+            // Panning
+            $("body").on("mouseup." + pluginName + (zoomOptions.touch ? " touchend" : ""), function () {
+                mousedown = false;
+                setTimeout(function () {
+                    self.panning = false;
+                }, 50);
+            });
+
+            self.$map.on("mousedown." + pluginName + (zoomOptions.touch ? " touchstart" : ""), function (e) {
+                if (e.pageX !== undefined) {
+                    mousedown = true;
+                    previousX = e.pageX;
+                    previousY = e.pageY;
+                } else {
+                    if (e.originalEvent.touches.length === 1) {
+                        mousedown = true;
+                        previousX = e.originalEvent.touches[0].pageX;
+                        previousY = e.originalEvent.touches[0].pageY;
+                    }
+                }
+            }).on("mousemove." + pluginName + (zoomOptions.touch ? " touchmove" : ""), function (e) {
+                var currentLevel = self.zoomData.zoomLevel;
+                var pageX = 0;
+                var pageY = 0;
+
+                if (e.pageX !== undefined) {
+                    pageX = e.pageX;
+                    pageY = e.pageY;
+                } else {
+                    if (e.originalEvent.touches.length === 1) {
+                        pageX = e.originalEvent.touches[0].pageX;
+                        pageY = e.originalEvent.touches[0].pageY;
+                    } else {
+                        mousedown = false;
+                    }
+                }
+
+                if (mousedown && currentLevel !== 0) {
+                    var offsetX = (previousX - pageX) / (1 + (currentLevel * zoomOptions.step)) * (mapWidth / self.paper.width);
+                    var offsetY = (previousY - pageY) / (1 + (currentLevel * zoomOptions.step)) * (mapHeight / self.paper.height);
+                    var panX = Math.min(Math.max(0, self.paper._viewBox[0] + offsetX), (mapWidth - self.paper._viewBox[2]));
+                    var panY = Math.min(Math.max(0, self.paper._viewBox[1] + offsetY), (mapHeight - self.paper._viewBox[3]));
+
+                    if (Math.abs(offsetX) > 5 || Math.abs(offsetY) > 5) {
+                        $.extend(self.zoomData, {
+                            panX: panX,
+                            panY: panY,
+                            zoomX: panX + self.paper._viewBox[2] / 2,
+                            zoomY: panY + self.paper._viewBox[3] / 2
+                        });
+                        self.paper.setViewBox(panX, panY, self.paper._viewBox[2], self.paper._viewBox[3]);
+
+                        clearTimeout(self.panningTO);
+                        self.panningTO = setTimeout(function () {
+                            self.$map.trigger("afterPanning", {
+                                x1: panX,
+                                y1: panY,
+                                x2: (panX + self.paper._viewBox[2]),
+                                y2: (panY + self.paper._viewBox[3])
+                            });
+                        }, 150);
+
+                        previousX = pageX;
+                        previousY = pageY;
+                        self.panning = true;
+                    }
+                    return false;
+                }
+            });
+        },
+
+        /*
+         * Map a mouse position to a map position
+         *      Transformation principle:
+         *          ** start with (pageX, pageY) absolute mouse coordinate
+         *          - Apply translation: take into accounts the map offset in the page
+         *          ** from this point, we have relative mouse coordinate
+         *          - Apply homothetic transformation: take into accounts initial factor of map sizing (fullWidth / actualWidth)
+         *          - Apply homothetic transformation: take into accounts the zoom factor
+         *          ** from this point, we have relative map coordinate
+         *          - Apply translation: take into accounts the current panning of the map
+         *          ** from this point, we have absolute map coordinate
+         * @param pageX: mouse client coordinate on X
+         * @param pageY: mouse client coordinate on Y
+         * @return map coordinate {x, y}
+         */
+        mapPagePositionToXY: function(pageX, pageY) {
+            var self = this;
+            var offset = self.$map.offset();
+            var initFactor = (self.options.map.width) ? (self.mapConf.width / self.options.map.width) : (self.mapConf.width / self.$map.width());
+            var zoomFactor = 1 / (1 + (self.zoomData.zoomLevel * self.options.map.zoom.step));
+            return {
+                x: (zoomFactor * initFactor * (pageX - offset.left)) + self.zoomData.panX,
+                y: (zoomFactor * initFactor * (pageY - offset.top)) + self.zoomData.panY
+            };
+        },
+
+        /*
+         * Zoom on the map at a specific level focused on specific coordinates
+         * If no coordinates are specified, the zoom will be focused on the center of the map
+         * options :
+         *    "level" : level of the zoom between minLevel and maxLevel
+         *    "x" or "latitude" : x coordinate or latitude of the point to focus on
+         *    "y" or "longitude" : y coordinate or longitude of the point to focus on
+         *    "fixedCenter" : set to true in order to preserve the position of x,y in the canvas when zoomed
+         *    "animDuration" : zoom duration
+         */
+        onZoomEvent: function (e, zoomOptions) {
+            var self = this;
+            var newLevel = self.zoomData.zoomLevel;
+            var panX = 0;
+            var panY = 0;
+            var previousZoomLevel = (1 + self.zoomData.zoomLevel * self.options.map.zoom.step);
+            var zoomLevel = 0;
+            var animDuration = (zoomOptions.animDuration !== undefined) ? zoomOptions.animDuration : self.options.map.zoom.animDuration;
+            var offsetX = 0;
+            var offsetY = 0;
+            var coords = {};
+
+            // Get user defined zoom level
+            if (zoomOptions.level !== undefined) {
+                if (typeof zoomOptions.level === "string") {
+                    // level is a string, either "n", "+n" or "-n"
+                    if ((zoomOptions.level.slice(0, 1) === '+') || (zoomOptions.level.slice(0, 1) === '-')) {
+                        // zoomLevel is relative
+                        newLevel = self.zoomData.zoomLevel + parseInt(zoomOptions.level);
+                    } else {
+                        // zoomLevel is absolute
+                        newLevel = parseInt(zoomOptions.level);
+                    }
+                } else {
+                    // level is integer
+                    if (zoomOptions.level < 0) {
+                        // zoomLevel is relative
+                        newLevel = self.zoomData.zoomLevel + zoomOptions.level;
+                    } else {
+                        // zoomLevel is absolute
+                        newLevel = zoomOptions.level;
+                    }
+                }
+                // Make sure we stay in the boundaries
+                newLevel = Math.min(Math.max(newLevel, self.options.map.zoom.minLevel), self.options.map.zoom.maxLevel);
+            }
+            
+            zoomLevel = (1 + newLevel * self.options.map.zoom.step);
+
+            if (zoomOptions.latitude !== undefined && zoomOptions.longitude !== undefined) {
+                coords = self.mapConf.getCoords(zoomOptions.latitude, zoomOptions.longitude);
+                zoomOptions.x = coords.x;
+                zoomOptions.y = coords.y;
+            }
+
+            if (zoomOptions.x === undefined)
+                zoomOptions.x = self.paper._viewBox[0] + self.paper._viewBox[2] / 2;
+
+            if (zoomOptions.y === undefined)
+                zoomOptions.y = (self.paper._viewBox[1] + self.paper._viewBox[3] / 2);
+
+            if (newLevel === 0) {
+                panX = 0;
+                panY = 0;
+            } else if (zoomOptions.fixedCenter !== undefined && zoomOptions.fixedCenter === true) {
+                offsetX = self.zoomData.panX + ((zoomOptions.x - self.zoomData.panX) * (zoomLevel - previousZoomLevel)) / zoomLevel;
+                offsetY = self.zoomData.panY + ((zoomOptions.y - self.zoomData.panY) * (zoomLevel - previousZoomLevel)) / zoomLevel;
+
+                panX = Math.min(Math.max(0, offsetX), (self.mapConf.width - (self.mapConf.width / zoomLevel)));
+                panY = Math.min(Math.max(0, offsetY), (self.mapConf.height - (self.mapConf.height / zoomLevel)));
+            } else {
+                panX = Math.min(Math.max(0, zoomOptions.x - (self.mapConf.width / zoomLevel) / 2), (self.mapConf.width - (self.mapConf.width / zoomLevel)));
+                panY = Math.min(Math.max(0, zoomOptions.y - (self.mapConf.height / zoomLevel) / 2), (self.mapConf.height - (self.mapConf.height / zoomLevel)));
+            }
+
+            // Update zoom level of the map
+            if (zoomLevel == previousZoomLevel && panX == self.zoomData.panX && panY == self.zoomData.panY) return;
+
+            if (animDuration > 0) {
+                self.animateViewBox(panX, panY, self.mapConf.width / zoomLevel, self.mapConf.height / zoomLevel, animDuration, self.options.map.zoom.animEasing);
+            } else {
+                self.paper.setViewBox(panX, panY, self.mapConf.width / zoomLevel, self.mapConf.height / zoomLevel);
+                clearTimeout(self.zoomTO);
+                self.zoomTO = setTimeout(function () {
+                    self.$map.trigger("afterZoom", {
+                        x1: panX,
+                        y1: panY,
+                        x2: (panX + (self.mapConf.width / zoomLevel)),
+                        y2: (panY + (self.mapConf.height / zoomLevel))
+                    });
+                }, 150);
+            }
+
+            $.extend(self.zoomData, {
+                zoomLevel: newLevel,
+                panX: panX,
+                panY: panY,
+                zoomX: panX + self.paper._viewBox[2] / 2,
+                zoomY: panY + self.paper._viewBox[3] / 2
+            });
+        },
+
+        /*
+         * Show some element in range defined by user
+         * Triggered by user $(".mapcontainer").trigger("showElementsInRange", [opt]);
+         *
+         * @param opt the options
+         *  opt.hiddenOpacity opacity for hidden element (default = 0.3)
+         *  opt.animDuration animation duration in ms (default = 0)
+         *  opt.afterShowRange callback
+         *  opt.ranges the range to show:
+         *  Example:
+         *  opt.ranges = {
+         *      'plot' : {
+         *          0 : {                        // valueIndex
+         *              'min': 1000,
+         *              'max': 1200
+         *          },
+         *          1 : {                        // valueIndex
+         *              'min': 10,
+         *              'max': 12
+         *          }
+         *      },
+         *      'area' : {
+         *          {'min': 10, 'max': 20}    // No valueIndex, only an object, use 0 as valueIndex (easy case)
+         *      }
+         *  }
+         */
+        onShowElementsInRange: function(e, opt) {
+            var self = this;
+
+            // set animDuration to default if not defined
+            if (opt.animDuration === undefined) {
+                opt.animDuration = 0;
+            }
+
+            // set hiddenOpacity to default if not defined
+            if (opt.hiddenOpacity === undefined) {
+                opt.hiddenOpacity = 0.3;
+            }
+
+            // handle area
+            if (opt.ranges && opt.ranges.area) {
+                self.showElemByRange(opt.ranges.area, self.areas, opt.hiddenOpacity, opt.animDuration);
+            }
+
+            // handle plot
+            if (opt.ranges && opt.ranges.plot) {
+                self.showElemByRange(opt.ranges.plot, self.plots, opt.hiddenOpacity, opt.animDuration);
+            }
+
+            // handle link
+            if (opt.ranges && opt.ranges.link) {
+                self.showElemByRange(opt.ranges.link, self.links, opt.hiddenOpacity, opt.animDuration);
+            }
+
+            // Call user callback
+            if (opt.afterShowRange) opt.afterShowRange();
+        },
+
+        /*
+         * Show some element in range
+         * @param ranges: the ranges
+         * @param elems: list of element on which to check against previous range
+         * @hiddenOpacity: the opacity when hidden
+         * @animDuration: the animation duration
+         */
+        showElemByRange: function(ranges, elems, hiddenOpacity, animDuration) {
+            var self = this;
+            // Hold the final opacity value for all elements consolidated after applying each ranges
+            // This allow to set the opacity only once for each elements
+            var elemsFinalOpacity = {};
+
+            // set object with one valueIndex to 0 if we have directly the min/max
+            if (ranges.min !== undefined || ranges.max !== undefined) {
+                ranges = {0: ranges};
+            }
+
+            // Loop through each valueIndex
+            $.each(ranges, function (valueIndex) {
+                var range = ranges[valueIndex];
+                // Check if user defined at least a min or max value
+                if (range.min === undefined && range.max === undefined) {
+                    return true; // skip this iteration (each loop), goto next range
+                }
+                // Loop through each elements
+                $.each(elems, function (id) {
+                    var elemValue = elems[id].value;
+                    // set value with one valueIndex to 0 if not object
+                    if (typeof elemValue !== "object") {
+                        elemValue = [elemValue];
+                    }
+                    // Check existence of this value index
+                    if (elemValue[valueIndex] === undefined) {
+                        return true; // skip this iteration (each loop), goto next element
+                    }
+                    // Check if in range
+                    if ((range.min !== undefined && elemValue[valueIndex] < range.min) ||
+                        (range.max !== undefined && elemValue[valueIndex] > range.max)) {
+                        // Element not in range
+                        elemsFinalOpacity[id] = hiddenOpacity;
+                    } else {
+                        // Element in range
+                        elemsFinalOpacity[id] = 1;
+                    }
+                });
+            });
+            // Now that we looped through all ranges, we can really assign the final opacity
+            $.each(elemsFinalOpacity, function (id) {
+                self.setElementOpacity(elems[id], elemsFinalOpacity[id], animDuration);
+            });
+        },
+
+        /*
+         * Set element opacity
+         * Handle elem.mapElem and elem.textElem
+         * @param elem the element
+         * @param opacity the opacity to apply
+         * @param animDuration the animation duration to use
+         */
+        setElementOpacity: function(elem, opacity, animDuration) {
+            // Ensure no animation is running
+            elem.mapElem.stop();
+            if (elem.textElem) elem.textElem.stop();
+            // If final opacity is not null, ensure element is shown before proceeding
+            if (opacity > 0) {
+                elem.mapElem.show();
+                if (elem.textElem) elem.textElem.show();
+            }
+            if (animDuration > 0) {
+                // Animate attribute
+                elem.mapElem.animate({"opacity": opacity}, animDuration, "linear", function () {
+                    // If final attribute is 0, hide
+                    if (opacity === 0) elem.mapElem.hide();
+                });
+                // Handle text element
+                if (elem.textElem) {
+                    // Animate attribute
+                    elem.textElem.animate({"opacity": opacity}, animDuration, "linear", function () {
+                        // If final attribute is 0, hide
+                        if (opacity === 0) elem.textElem.hide();
+                    });
+                }
+            } else {
+                // Set attribute
+                elem.mapElem.attr({"opacity": opacity});
+                // For null opacity, hide it
+                if (opacity === 0) elem.mapElem.hide();
+                // Handle text elemen
+                if (elem.textElem) {
+                    // Set attribute
+                    elem.textElem.attr({"opacity": opacity});
+                // For null opacity, hide it
+                    if (opacity === 0) elem.textElem.hide();
+                }
+            }
+        },
+
+        /*
+         *
+         * Update the current map
+         * Refresh attributes and tooltips for areas and plots
+         * @param opt option for the refresh :
+         *  opt.mapOptions: options to update for plots and areas
+         *  opt.replaceOptions: whether mapsOptions should entirely replace current map options, or just extend it
+         *  opt.opt.newPlots new plots to add to the map
+         *  opt.newLinks new links to add to the map
+         *  opt.deletePlotKeys plots to delete from the map (array, or "all" to remove all plots)
+         *  opt.deleteLinkKeys links to remove from the map (array, or "all" to remove all links)
+         *  opt.setLegendElemsState the state of legend elements to be set : show (default) or hide
+         *  opt.animDuration animation duration in ms (default = 0)
+         *  opt.afterUpdate Hook that allows to add custom processing on the map
+         */
+        onUpdateEvent: function (e, opt) {
+            var self = this;
+            // Abort if opt is undefined
+            if (typeof opt !== "object")  return;
+
+            var i = 0;
+            var animDuration = (opt.animDuration) ? opt.animDuration : 0;
+
+            // This function remove an element using animation (or not, depending on animDuration)
+            // Used for deletePlotKeys and deleteLinkKeys
+            var fnRemoveElement = function (elem) {
+                // Unset all event handlers
+                self.unsetHover(elem.mapElem, elem.textElem);
+                if (animDuration > 0) {
+                    elem.mapElem.animate({"opacity": 0}, animDuration, "linear", function () {
+                        elem.mapElem.remove();
+                    });
+                    if (elem.textElem) {
+                        elem.textElem.animate({"opacity": 0}, animDuration, "linear", function () {
+                            elem.textElem.remove();
+                        });
+                    }
+                } else {
+                    elem.mapElem.remove();
+                    if (elem.textElem) {
+                        elem.textElem.remove();
+                    }
+                }
+            };
+
+            // This function show an element using animation
+            // Used for newPlots and newLinks
+            var fnShowElement = function (elem) {
+                // Starts with hidden elements
+                elem.mapElem.attr({opacity: 0});
+                if (elem.textElem) elem.textElem.attr({opacity: 0});
+                // Set final element opacity
+                self.setElementOpacity(
+                    elem,
+                    (elem.mapElem.originalAttrs.opacity !== undefined) ? elem.mapElem.originalAttrs.opacity : 1,
+                    animDuration
+                );
+            };
+
+            if (typeof opt.mapOptions === "object") {
+                if (opt.replaceOptions === true) self.options = self.extendDefaultOptions(opt.mapOptions);
+                else $.extend(true, self.options, opt.mapOptions);
+
+                // IF we update areas, plots or legend, then reset all legend state to "show"
+                if (opt.mapOptions.areas !== undefined || opt.mapOptions.plots !== undefined || opt.mapOptions.legend !== undefined) {
+                    $("[data-type='elem']", self.$container).each(function (id, elem) {
+                        if ($(elem).attr('data-hidden') === "1") {
+                            // Toggle state of element by clicking
+                            $(elem).trigger("click." + pluginName, [false, animDuration]);
+                        }
+                    });
+                }
+            }
+
+            // Delete plots by name if deletePlotKeys is array
+            if (typeof opt.deletePlotKeys === "object") {
+                for (; i < opt.deletePlotKeys.length; i++) {
+                    if (self.plots[opt.deletePlotKeys[i]] !== undefined) {
+                        fnRemoveElement(self.plots[opt.deletePlotKeys[i]]);
+                        delete self.plots[opt.deletePlotKeys[i]];
+                    }
+                }
+                // Delete ALL plots if deletePlotKeys is set to "all"
+            } else if (opt.deletePlotKeys === "all") {
+                $.each(self.plots, function (id, elem) {
+                    fnRemoveElement(elem);
+                });
+                // Empty plots object
+                self.plots = {};
+            }
+
+            // Delete links by name if deleteLinkKeys is array
+            if (typeof opt.deleteLinkKeys === "object") {
+                for (i = 0; i < opt.deleteLinkKeys.length; i++) {
+                    if (self.links[opt.deleteLinkKeys[i]] !== undefined) {
+                        fnRemoveElement(self.links[opt.deleteLinkKeys[i]]);
+                        delete self.links[opt.deleteLinkKeys[i]];
+                    }
+                }
+                // Delete ALL links if deleteLinkKeys is set to "all"
+            } else if (opt.deleteLinkKeys === "all") {
+                $.each(self.links, function (id, elem) {
+                    fnRemoveElement(elem);
+                });
+                // Empty links object
+                self.links = {};
+            }
+
+            // New plots
+            if (typeof opt.newPlots === "object") {
+                $.each(opt.newPlots, function (id) {
+                    if (self.plots[id] === undefined) {
+                        self.options.plots[id] = opt.newPlots[id];
+                        self.plots[id] = self.drawPlot(id);
+                        if (animDuration > 0) {
+                            fnShowElement(self.plots[id]);
+                        }
+                    }
+                });
+            }
+
+            // New links
+            if (typeof opt.newLinks === "object") {
+                var newLinks = self.drawLinksCollection(opt.newLinks);
+                $.extend(self.links, newLinks);
+                $.extend(self.options.links, opt.newLinks);
+                if (animDuration > 0) {
+                    $.each(newLinks, function (id) {
+                        fnShowElement(newLinks[id]);
+                    });
+                }
+            }
+
+            // Update areas attributes and tooltips
+            $.each(self.areas, function (id) {
+                var elemOptions = self.getElemOptions(
+                    self.options.map.defaultArea,
+                    (self.options.areas[id] ? self.options.areas[id] : {}),
+                    self.options.legend.area
+                );
+
+                self.updateElem(elemOptions, self.areas[id], animDuration);
+            });
+
+            // Update plots attributes and tooltips
+            $.each(self.plots, function (id) {
+                var elemOptions = self.getElemOptions(
+                    self.options.map.defaultPlot,
+                    (self.options.plots[id] ? self.options.plots[id] : {}),
+                    self.options.legend.plot
+                );
+                if (elemOptions.type == "square") {
+                    elemOptions.attrs.width = elemOptions.size;
+                    elemOptions.attrs.height = elemOptions.size;
+                    elemOptions.attrs.x = self.plots[id].mapElem.attrs.x - (elemOptions.size - self.plots[id].mapElem.attrs.width) / 2;
+                    elemOptions.attrs.y = self.plots[id].mapElem.attrs.y - (elemOptions.size - self.plots[id].mapElem.attrs.height) / 2;
+                } else if (elemOptions.type == "image") {
+                    elemOptions.attrs.width = elemOptions.width;
+                    elemOptions.attrs.height = elemOptions.height;
+                    elemOptions.attrs.x = self.plots[id].mapElem.attrs.x - (elemOptions.width - self.plots[id].mapElem.attrs.width) / 2;
+                    elemOptions.attrs.y = self.plots[id].mapElem.attrs.y - (elemOptions.height - self.plots[id].mapElem.attrs.height) / 2;
+                } else { // Default : circle
+                    elemOptions.attrs.r = elemOptions.size / 2;
+                }
+
+                self.updateElem(elemOptions, self.plots[id], animDuration);
+            });
+
+            // Update links attributes and tooltips
+            $.each(self.links, function (id) {
+                var elemOptions = self.getElemOptions(
+                    self.options.map.defaultLink,
+                    (self.options.links[id] ? self.options.links[id] : {}),
+                    {}
+                );
+
+                self.updateElem(elemOptions, self.links[id], animDuration);
+            });
+
+            // Update legends
+            if (opt.mapOptions && typeof opt.mapOptions.legend === "object") {
+                self.createLegends("area", self.areas, 1);
+                if (self.options.map.width) {
+                    self.createLegends("plot", self.plots, (self.options.map.width / self.mapConf.width));
+                } else {
+                    self.createLegends("plot", self.plots, (self.$map.width() / self.mapConf.width));
+                }
+            }
+
+            // Hide/Show all elements based on showlegendElems
+            //      Toggle (i.e. click) only if:
+            //          - slice legend is shown AND we want to hide
+            //          - slice legend is hidden AND we want to show
+            if (typeof opt.setLegendElemsState === "object") {
+                // setLegendElemsState is an object listing the legend we want to hide/show
+                $.each(opt.setLegendElemsState, function (legendCSSClass, action) {
+                    // Search for the legend
+                    var $legend = self.$container.find("." + legendCSSClass)[0];
+                    if ($legend !== undefined) {
+                        // Select all elem inside this legend
+                        $("[data-type='elem']", $legend).each(function (id, elem) {
+                            if (($(elem).attr('data-hidden') === "0" && action === "hide") ||
+                                ($(elem).attr('data-hidden') === "1" && action === "show")) {
+                                // Toggle state of element by clicking
+                                $(elem).trigger("click." + pluginName, [false, animDuration]);
+                            }
+                        });
+                    }
+                });
+            } else {
+                // setLegendElemsState is a string, or is undefined
+                // Default : "show"
+                var action = (opt.setLegendElemsState === "hide") ? "hide" : "show";
+
+                $("[data-type='elem']", self.$container).each(function (id, elem) {
+                    if (($(elem).attr('data-hidden') === "0" && action === "hide") ||
+                        ($(elem).attr('data-hidden') === "1" && action === "show")) {
+                        // Toggle state of element by clicking
+                        $(elem).trigger("click." + pluginName, [false, animDuration]);
+                    }
+                });
+            }
+            if (opt.afterUpdate) opt.afterUpdate(self.$container, self.paper, self.areas, self.plots, self.options);
+        },
+
+        /*
+         * Draw all links between plots on the paper
+         */
+        drawLinksCollection: function (linksCollection) {
+            var self = this;
+            var p1 = {};
+            var p2 = {};
+            var coordsP1 = {};
+            var coordsP2 = {};
+            var links = {};
+
+            $.each(linksCollection, function (id) {
+                var elemOptions = self.getElemOptions(self.options.map.defaultLink, linksCollection[id], {});
+
+                if (typeof linksCollection[id].between[0] == 'string') {
+                    p1 = self.options.plots[linksCollection[id].between[0]];
+                } else {
+                    p1 = linksCollection[id].between[0];
+                }
+
+                if (typeof linksCollection[id].between[1] == 'string') {
+                    p2 = self.options.plots[linksCollection[id].between[1]];
+                } else {
+                    p2 = linksCollection[id].between[1];
+                }
+
+                if (p1.latitude !== undefined && p1.longitude !== undefined) {
+                    coordsP1 = self.mapConf.getCoords(p1.latitude, p1.longitude);
+                } else {
+                    coordsP1.x = p1.x;
+                    coordsP1.y = p1.y;
+                }
+
+                if (p2.latitude !== undefined && p2.longitude !== undefined) {
+                    coordsP2 = self.mapConf.getCoords(p2.latitude, p2.longitude);
+                } else {
+                    coordsP2.x = p2.x;
+                    coordsP2.y = p2.y;
+                }
+                links[id] = self.drawLink(id, coordsP1.x, coordsP1.y, coordsP2.x, coordsP2.y, elemOptions);
+            });
+            return links;
+        },
+
+        /*
+         * Draw a curved link between two couples of coordinates a(xa,ya) and b(xb, yb) on the paper
+         */
+        drawLink: function (id, xa, ya, xb, yb, elemOptions) {
+            var self = this;
+            var elem = {};
+            // Compute the "curveto" SVG point, d(x,y)
+            // c(xc, yc) is the center of (xa,ya) and (xb, yb)
+            var xc = (xa + xb) / 2;
+            var yc = (ya + yb) / 2;
+
+            // Equation for (cd) : y = acd * x + bcd (d is the cure point)
+            var acd = -1 / ((yb - ya) / (xb - xa));
+            var bcd = yc - acd * xc;
+
+            // dist(c,d) = dist(a,b) (=abDist)
+            var abDist = Math.sqrt((xb - xa) * (xb - xa) + (yb - ya) * (yb - ya));
+
+            // Solution for equation dist(cd) = sqrt((xd - xc)² + (yd - yc)²)
+            // dist(c,d)² = (xd - xc)² + (yd - yc)²
+            // We assume that dist(c,d) = dist(a,b)
+            // so : (xd - xc)² + (yd - yc)² - dist(a,b)² = 0
+            // With the factor : (xd - xc)² + (yd - yc)² - (factor*dist(a,b))² = 0
+            // (xd - xc)² + (acd*xd + bcd - yc)² - (factor*dist(a,b))² = 0
+            var a = 1 + acd * acd;
+            var b = -2 * xc + 2 * acd * bcd - 2 * acd * yc;
+            var c = xc * xc + bcd * bcd - bcd * yc - yc * bcd + yc * yc - ((elemOptions.factor * abDist) * (elemOptions.factor * abDist));
+            var delta = b * b - 4 * a * c;
+            var x = 0;
+            var y = 0;
+
+            // There are two solutions, we choose one or the other depending on the sign of the factor
+            if (elemOptions.factor > 0) {
+                x = (-b + Math.sqrt(delta)) / (2 * a);
+                y = acd * x + bcd;
+            } else {
+                x = (-b - Math.sqrt(delta)) / (2 * a);
+                y = acd * x + bcd;
+            }
+
+            elem.mapElem = self.paper.path("m " + xa + "," + ya + " C " + x + "," + y + " " + xb + "," + yb + " " + xb + "," + yb + "").attr(elemOptions.attrs);
+            self.initElem(elem, elemOptions, id);
+
+            return elem;
+        },
+
+        /*
+         * Update the element "elem" on the map with the new elemOptions options
+         */
+        updateElem: function (elemOptions, elem, animDuration) {
+            var self = this;
+            var bbox;
+            var textPosition;
+            var plotOffsetX;
+            var plotOffsetY;
+
+            if (elemOptions.value !== undefined)
+                elem.value = elemOptions.value;
+
+            // Update the label
+            if (elem.textElem) {
+                if (elemOptions.text !== undefined && elemOptions.text.content !== undefined && elemOptions.text.content != elem.textElem.attrs.text)
+                    elem.textElem.attr({text: elemOptions.text.content});
+
+                bbox = elem.mapElem.getBBox();
+
+                if (elemOptions.size || (elemOptions.width && elemOptions.height)) {
+                    if (elemOptions.type == "image" || elemOptions.type == "svg") {
+                        plotOffsetX = (elemOptions.width - bbox.width) / 2;
+                        plotOffsetY = (elemOptions.height - bbox.height) / 2;
+                    } else {
+                        plotOffsetX = (elemOptions.size - bbox.width) / 2;
+                        plotOffsetY = (elemOptions.size - bbox.height) / 2;
+                    }
+                    bbox.x -= plotOffsetX;
+                    bbox.x2 += plotOffsetX;
+                    bbox.y -= plotOffsetY;
+                    bbox.y2 += plotOffsetY;
+                }
+
+                textPosition = self.getTextPosition(bbox, elemOptions.text.position, elemOptions.text.margin);
+                if (textPosition.x != elem.textElem.attrs.x || textPosition.y != elem.textElem.attrs.y) {
+                    if (animDuration > 0) {
+                        elem.textElem.attr({"text-anchor": textPosition.textAnchor});
+                        elem.textElem.animate({x: textPosition.x, y: textPosition.y}, animDuration);
+                    } else
+                        elem.textElem.attr({
+                            x: textPosition.x,
+                            y: textPosition.y,
+                            "text-anchor": textPosition.textAnchor
+                        });
+                }
+
+                self.setHoverOptions(elem.textElem, elemOptions.text.attrs, elemOptions.text.attrsHover);
+                if (animDuration > 0)
+                    elem.textElem.animate(elemOptions.text.attrs, animDuration);
+                else
+                    elem.textElem.attr(elemOptions.text.attrs);
+            }
+
+            // Update elements attrs and attrsHover
+            self.setHoverOptions(elem.mapElem, elemOptions.attrs, elemOptions.attrsHover);
+            if (animDuration > 0)
+                elem.mapElem.animate(elemOptions.attrs, animDuration);
+            else
+                elem.mapElem.attr(elemOptions.attrs);
+
+            // Update dimensions of SVG plots
+            if (elemOptions.type == "svg") {
+                elem.mapElem.transform("m" + (elemOptions.width / elem.mapElem.originalWidth) + ",0,0," + (elemOptions.height / elem.mapElem.originalHeight) + "," + bbox.x + "," + bbox.y);
+            }
+
+            // Update the tooltip
+            if (elemOptions.tooltip) {
+                if (elem.mapElem.tooltip === undefined) {
+                    self.setTooltip(elem.mapElem);
+                    if (elem.textElem) self.setTooltip(elem.textElem);
+                }
+                elem.mapElem.tooltip = elemOptions.tooltip;
+                if (elem.textElem) elem.textElem.tooltip = elemOptions.tooltip;
+            }
+
+            // Update the link
+            if (elemOptions.href !== undefined) {
+                if (elem.mapElem.href === undefined) {
+                    self.setHref(elem.mapElem);
+                    if (elem.textElem) self.setHref(elem.textElem);
+                }
+                elem.mapElem.href = elemOptions.href;
+                elem.mapElem.target = elemOptions.target;
+                if (elem.textElem) {
+                    elem.textElem.href = elemOptions.href;
+                    elem.textElem.target = elemOptions.target;
+                }
+            }
+        },
+
+        /*
+         * Draw the plot
+         */
+        drawPlot: function (id) {
+            var self = this;
+            var plot = {};
+            var coords = {};
+            var elemOptions = self.getElemOptions(
+                self.options.map.defaultPlot,
+                (self.options.plots[id] ? self.options.plots[id] : {}),
+                self.options.legend.plot
+            );
+
+            if (elemOptions.x !== undefined && elemOptions.y !== undefined)
+                coords = {x: elemOptions.x, y: elemOptions.y};
+            else
+                coords = self.mapConf.getCoords(elemOptions.latitude, elemOptions.longitude);
+
+            if (elemOptions.type == "square") {
+                plot = {
+                    "mapElem": self.paper.rect(
+                        coords.x - (elemOptions.size / 2),
+                        coords.y - (elemOptions.size / 2),
+                        elemOptions.size,
+                        elemOptions.size
+                    ).attr(elemOptions.attrs)
+                };
+            } else if (elemOptions.type == "image") {
+                plot = {
+                    "mapElem": self.paper.image(
+                        elemOptions.url,
+                        coords.x - elemOptions.width / 2,
+                        coords.y - elemOptions.height / 2,
+                        elemOptions.width,
+                        elemOptions.height
+                    ).attr(elemOptions.attrs)
+                };
+            } else if (elemOptions.type == "svg") {
+                plot = {"mapElem": self.paper.path(elemOptions.path).attr(elemOptions.attrs)};
+                plot.mapElem.originalWidth = plot.mapElem.getBBox().width;
+                plot.mapElem.originalHeight = plot.mapElem.getBBox().height;
+                plot.mapElem.transform("m" + (elemOptions.width / plot.mapElem.originalWidth) + ",0,0," + (elemOptions.height / plot.mapElem.originalHeight) + "," + (coords.x - elemOptions.width / 2) + "," + (coords.y - elemOptions.height / 2));
+            } else { // Default = circle
+                plot = {"mapElem": self.paper.circle(coords.x, coords.y, elemOptions.size / 2).attr(elemOptions.attrs)};
+            }
+
+            self.initElem(plot, elemOptions, id);
+            return plot;
+        },
+
+        /*
+         * Set target link on elem
+         */
+        setHref: function (elem) {
+            var self = this;
+            elem.attr({cursor: "pointer"});
+            $(elem.node).on("click." + pluginName, function () {
+                if (!self.panning && elem.href)
+                    window.open(elem.href, elem.target);
+            });
+        },
+
+        /*
+         * Set a tooltip for the areas and plots
+         * @param elem area or plot element
+         * @param content the content to set in the tooltip
+         */
+        setTooltip: function (elem) {
+            var self = this;
+            var tooltipTO = 0;
+            var cssClass = self.$tooltip.attr('class');
+            var updateTooltipPosition = function (x, y) {
+                var tooltipPosition = {
+                    "left": Math.min(self.$map.width() - self.$tooltip.outerWidth() - 5, x - self.$map.offset().left + 10),
+                    "top": Math.min(self.$map.height() - self.$tooltip.outerHeight() - 5, y - self.$map.offset().top + 20)
+                };
+
+                if (elem.tooltip.overflow !== undefined) {
+                    if (elem.tooltip.overflow.right !== undefined && elem.tooltip.overflow.right === true) {
+                        tooltipPosition.left = x - self.$map.offset().left + 10;
+                    }
+                    if (elem.tooltip.overflow.bottom !== undefined && elem.tooltip.overflow.bottom === true) {
+                        tooltipPosition.top = y - self.$map.offset().top + 20;
+                    }
+                }
+
+                self.$tooltip.css(tooltipPosition);
+            };
+
+            $(elem.node).on("mouseover." + pluginName, function (e) {
+                tooltipTO = setTimeout(
+                    function () {
+                        self.$tooltip.attr("class", cssClass);
+                        if (elem.tooltip !== undefined) {
+                            if (elem.tooltip.content !== undefined) {
+                                // if tooltip.content is function, call it. Otherwise, assign it directly.
+                                var content = (typeof elem.tooltip.content === "function") ? elem.tooltip.content(elem) : elem.tooltip.content;
+                                self.$tooltip.html(content).css("display", "block");
+                            }
+                            if (elem.tooltip.cssClass !== undefined) {
+                                self.$tooltip.addClass(elem.tooltip.cssClass);
+                            }
+                        }
+                        updateTooltipPosition(e.pageX, e.pageY);
+                    }, 120
+                );
+            }).on("mouseout." + pluginName, function () {
+                clearTimeout(tooltipTO);
+                self.$tooltip.css("display", "none");
+            }).on("mousemove." + pluginName, function (e) {
+                updateTooltipPosition(e.pageX, e.pageY);
+            });
+        },
+
+        /*
+         * Set user defined handlers for events on areas and plots
+         * @param id the id of the element
+         * @param elemOptions the element parameters
+         * @param mapElem the map element to set callback on
+         * @param textElem the optional text within the map element
+         */
+        setEventHandlers: function (id, elemOptions, mapElem, textElem) {
+            var self = this;
+            $.each(elemOptions.eventHandlers, function (event) {
+                (function (event) {
+                    $(mapElem.node).on(event, function (e) {
+                        if (!self.panning) elemOptions.eventHandlers[event](e, id, mapElem, textElem, elemOptions);
+                    });
+                    if (textElem) {
+                        $(textElem.node).on(event, function (e) {
+                            if (!self.panning) elemOptions.eventHandlers[event](e, id, mapElem, textElem, elemOptions);
+                        });
+                    }
+                })(event);
+            });
+        },
+
+        /*
+         * Draw a legend for areas and / or plots
+         * @param legendOptions options for the legend to draw
+         * @param legendType the type of the legend : "area" or "plot"
+         * @param elems collection of plots or areas on the maps
+         * @param legendIndex index of the legend in the conf array
+         */
+        drawLegend: function (legendOptions, legendType, elems, scale, legendIndex) {
+            var self = this;
+            var $legend = {};
+            var legendPaper = {};
+            var width = 0;
+            var height = 0;
+            var title = null;
+            var elem = {};
+            var elemBBox = {};
+            var label = {};
+            var i = 0;
+            var x = 0;
+            var y = 0;
+            var yCenter = 0;
+            var sliceAttrs = [];
+            var length = 0;
+
+            $legend = $("." + legendOptions.cssClass, self.$container).empty();
+            legendPaper = new Raphael($legend.get(0));
+            // Set some data to object
+            $(legendPaper.canvas).attr({"data-type": legendType, "data-index": legendIndex});
+
+            height = width = 0;
+
+            // Set the title of the legend
+            if (legendOptions.title && legendOptions.title !== "") {
+                title = legendPaper.text(legendOptions.marginLeftTitle, 0, legendOptions.title).attr(legendOptions.titleAttrs);
+                title.attr({y: 0.5 * title.getBBox().height});
+
+                width = legendOptions.marginLeftTitle + title.getBBox().width;
+                height += legendOptions.marginBottomTitle + title.getBBox().height;
+            }
+
+            // Calculate attrs (and width, height and r (radius)) for legend elements, and yCenter for horizontal legends
+            for (i = 0, length = legendOptions.slices.length; i < length; ++i) {
+                var yCenterCurrent = 0;
+
+                // Check if size is defined. If not, take defaultPlot size
+                if (legendOptions.slices[i].size === undefined)
+                    legendOptions.slices[i].size = self.options.map.defaultPlot.size;
+
+                if (legendOptions.slices[i].legendSpecificAttrs === undefined)
+                    legendOptions.slices[i].legendSpecificAttrs = {};
+
+                sliceAttrs[i] = $.extend(
+                    {},
+                    (legendType == "plot") ? self.options.map.defaultPlot.attrs : self.options.map.defaultArea.attrs,
+                    legendOptions.slices[i].attrs,
+                    legendOptions.slices[i].legendSpecificAttrs
+                );
+
+                if (legendType == "area") {
+                    if (sliceAttrs[i].width === undefined)
+                        sliceAttrs[i].width = 30;
+                    if (sliceAttrs[i].height === undefined)
+                        sliceAttrs[i].height = 20;
+                } else if (legendOptions.slices[i].type == "square") {
+                    if (sliceAttrs[i].width === undefined)
+                        sliceAttrs[i].width = legendOptions.slices[i].size;
+                    if (sliceAttrs[i].height === undefined)
+                        sliceAttrs[i].height = legendOptions.slices[i].size;
+                } else if (legendOptions.slices[i].type == "image" || legendOptions.slices[i].type == "svg") {
+                    if (sliceAttrs[i].width === undefined)
+                        sliceAttrs[i].width = legendOptions.slices[i].width;
+                    if (sliceAttrs[i].height === undefined)
+                        sliceAttrs[i].height = legendOptions.slices[i].height;
+                } else {
+                    if (sliceAttrs[i].r === undefined)
+                        sliceAttrs[i].r = legendOptions.slices[i].size / 2;
+                }
+
+                // Compute yCenter for this legend slice
+                yCenterCurrent = legendOptions.marginBottomTitle;
+                // Add title height if it exists
+                if (title) {
+                    yCenterCurrent += title.getBBox().height;
+                }
+                if (legendType == "plot" && (legendOptions.slices[i].type === undefined || legendOptions.slices[i].type == "circle")) {
+                    yCenterCurrent += scale * sliceAttrs[i].r;
+                } else {
+                    yCenterCurrent += scale * sliceAttrs[i].height / 2;
+                }
+                // Update yCenter if current larger
+                yCenter = Math.max(yCenter, yCenterCurrent);
+            }
+
+            if (legendOptions.mode == "horizontal") {
+                width = legendOptions.marginLeft;
+            }
+
+            // Draw legend elements (circle, square or image in vertical or horizontal mode)
+            for (i = 0, length = legendOptions.slices.length; i < length; ++i) {
+                if (legendOptions.slices[i].display === undefined || legendOptions.slices[i].display === true) {
+                    if (legendType == "area") {
+                        if (legendOptions.mode == "horizontal") {
+                            x = width + legendOptions.marginLeft;
+                            y = yCenter - (0.5 * scale * sliceAttrs[i].height);
+                        } else {
+                            x = legendOptions.marginLeft;
+                            y = height;
+                        }
+
+                        elem = legendPaper.rect(x, y, scale * (sliceAttrs[i].width), scale * (sliceAttrs[i].height));
+                    } else if (legendOptions.slices[i].type == "square") {
+                        if (legendOptions.mode == "horizontal") {
+                            x = width + legendOptions.marginLeft;
+                            y = yCenter - (0.5 * scale * sliceAttrs[i].height);
+                        } else {
+                            x = legendOptions.marginLeft;
+                            y = height;
+                        }
+
+                        elem = legendPaper.rect(x, y, scale * (sliceAttrs[i].width), scale * (sliceAttrs[i].height));
+
+                    } else if (legendOptions.slices[i].type == "image" || legendOptions.slices[i].type == "svg") {
+                        if (legendOptions.mode == "horizontal") {
+                            x = width + legendOptions.marginLeft;
+                            y = yCenter - (0.5 * scale * sliceAttrs[i].height);
+                        } else {
+                            x = legendOptions.marginLeft;
+                            y = height;
+                        }
+
+                        if (legendOptions.slices[i].type == "image") {
+                            elem = legendPaper.image(
+                                legendOptions.slices[i].url, x, y, scale * sliceAttrs[i].width, scale * sliceAttrs[i].height);
+                        } else {
+                            elem = legendPaper.path(legendOptions.slices[i].path);
+                            elem.transform("m" + ((scale * legendOptions.slices[i].width) / elem.getBBox().width) + ",0,0," + ((scale * legendOptions.slices[i].height) / elem.getBBox().height) + "," + x + "," + y);
+                        }
+                    } else {
+                        if (legendOptions.mode == "horizontal") {
+                            x = width + legendOptions.marginLeft + scale * (sliceAttrs[i].r);
+                            y = yCenter;
+                        } else {
+                            x = legendOptions.marginLeft + scale * (sliceAttrs[i].r);
+                            y = height + scale * (sliceAttrs[i].r);
+                        }
+                        elem = legendPaper.circle(x, y, scale * (sliceAttrs[i].r));
+                    }
+
+                    // Set attrs to the element drawn above
+                    delete sliceAttrs[i].width;
+                    delete sliceAttrs[i].height;
+                    delete sliceAttrs[i].r;
+                    elem.attr(sliceAttrs[i]);
+                    elemBBox = elem.getBBox();
+
+                    // Draw the label associated with the element
+                    if (legendOptions.mode == "horizontal") {
+                        x = width + legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel;
+                        y = yCenter;
+                    } else {
+                        x = legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel;
+                        y = height + (elemBBox.height / 2);
+                    }
+
+                    label = legendPaper.text(x, y, legendOptions.slices[i].label).attr(legendOptions.labelAttrs);
+
+                    // Update the width and height for the paper
+                    if (legendOptions.mode == "horizontal") {
+                        var currentHeight = legendOptions.marginBottom + elemBBox.height;
+                        width += legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel + label.getBBox().width;
+                        if (legendOptions.slices[i].type != "image" && legendType != "area") {
+                            currentHeight += legendOptions.marginBottomTitle;
+                        }
+                        // Add title height if it exists
+                        if (title) {
+                            currentHeight += title.getBBox().height;
+                        }
+                        height = Math.max(height, currentHeight);
+                    } else {
+                        width = Math.max(width, legendOptions.marginLeft + elemBBox.width + legendOptions.marginLeftLabel + label.getBBox().width);
+                        height += legendOptions.marginBottom + elemBBox.height;
+                    }
+
+                    $(elem.node).attr({"data-type": "elem", "data-index": i, "data-hidden": 0});
+                    $(label.node).attr({"data-type": "label", "data-index": i, "data-hidden": 0});
+
+                    // Hide map elements when the user clicks on a legend item
+                    if (legendOptions.hideElemsOnClick.enabled) {
+                        // Hide/show elements when user clicks on a legend element
+                        label.attr({cursor: "pointer"});
+                        elem.attr({cursor: "pointer"});
+
+                        self.setHoverOptions(elem, sliceAttrs[i], sliceAttrs[i]);
+                        self.setHoverOptions(label, legendOptions.labelAttrs, legendOptions.labelAttrsHover);
+                        self.setHover(elem, label);
+                        self.handleClickOnLegendElem(legendOptions, legendOptions.slices[i], label, elem, elems, legendIndex);
+                    }
+                }
+            }
+
+            // VMLWidth option allows you to set static width for the legend
+            // only for VML render because text.getBBox() returns wrong values on IE6/7
+            if (Raphael.type != "SVG" && legendOptions.VMLWidth)
+                width = legendOptions.VMLWidth;
+
+            legendPaper.setSize(width, height);
+        },
+
+        /*
+         * Allow to hide elements of the map when the user clicks on a related legend item
+         * @param legendOptions options for the legend to draw
+         * @param sliceOptions options of the slice
+         * @param label label of the legend item
+         * @param elem element of the legend item
+         * @param elems collection of plots or areas displayed on the map
+         * @param legendIndex index of the legend in the conf array
+         */
+        handleClickOnLegendElem: function (legendOptions, sliceOptions, label, elem, elems, legendIndex) {
+            var self = this;
+            var hideMapElems = function (e, hideOtherElems, animDuration) {
+                var elemValue = 0;
+                var hidden = $(label.node).attr('data-hidden');
+                var hiddenNewAttr = (hidden === '0') ? {"data-hidden": '1'} : {"data-hidden": '0'};
+
+                // Check animDuration: if not set, this is a regular click, use the value specified in options
+                if (animDuration === undefined) animDuration = legendOptions.hideElemsOnClick.animDuration;
+
+                if (hidden === '0') {
+                    if (animDuration > 0) label.animate({"opacity": 0.5}, animDuration);
+                    else label.attr({"opacity": 0.5});
+                } else {
+                    if (animDuration > 0) label.animate({"opacity": 1}, animDuration);
+                    else label.attr({"opacity": 1});
+                }
+
+                $.each(elems, function (id) {
+                    // Retreive stored data of element
+                    //      'hidden-by' contains the list of legendIndex that is hiding this element
+                    var hiddenBy = elems[id].mapElem.data('hidden-by');
+                    // Set to empty object if undefined
+                    if (hiddenBy === undefined) hiddenBy = {};
+
+                    if ($.isArray(elems[id].value)) {
+                        elemValue = elems[id].value[legendIndex];
+                    } else {
+                        elemValue = elems[id].value;
+                    }
+
+                    if ((sliceOptions.sliceValue !== undefined && elemValue == sliceOptions.sliceValue)
+                        || ((sliceOptions.sliceValue === undefined)
+                        && (sliceOptions.min === undefined || elemValue >= sliceOptions.min)
+                        && (sliceOptions.max === undefined || elemValue <= sliceOptions.max))
+                    ) {
+                        (function (id) {
+                            if (hidden === '0') { // we want to hide this element
+                                hiddenBy[legendIndex] = true; // add legendIndex to the data object for later use
+                                self.setElementOpacity(elems[id], legendOptions.hideElemsOnClick.opacity, animDuration);
+                            } else { // We want to show this element
+                                delete hiddenBy[legendIndex]; // Remove this legendIndex from object
+                                // Check if another legendIndex is defined
+                                // We will show this element only if no legend is no longer hiding it
+                                if ($.isEmptyObject(hiddenBy)) {
+                                    self.setElementOpacity(
+                                        elems[id],
+                                        elems[id].mapElem.originalAttrs.opacity !== undefined ? elems[id].mapElem.originalAttrs.opacity : 1,
+                                        animDuration
+                                    );
+                                }
+                            }
+                            // Update elem data with new values
+                            elems[id].mapElem.data('hidden-by', hiddenBy);
+                        })(id);
+                    }
+                });
+
+                $(elem.node).attr(hiddenNewAttr);
+                $(label.node).attr(hiddenNewAttr);
+
+                if ((hideOtherElems === undefined || hideOtherElems === true)
+                    && legendOptions.exclusive !== undefined && legendOptions.exclusive === true
+                ) {
+                    $("[data-type='elem'][data-hidden=0]", self.$container).each(function () {
+                        if ($(this).attr('data-index') !== $(elem.node).attr('data-index')) {
+                            $(this).trigger("click." + pluginName, false);
+                        }
+                    });
+                }
+            };
+            $(label.node).on("click." + pluginName, hideMapElems);
+            $(elem.node).on("click." + pluginName, hideMapElems);
+
+            if (sliceOptions.clicked !== undefined && sliceOptions.clicked === true) {
+                $(elem.node).trigger("click." + pluginName, false);
+            }
+        },
+
+        /*
+         * Create all legends for a specified type (area or plot)
+         * @param legendType the type of the legend : "area" or "plot"
+         * @param elems collection of plots or areas displayed on the map
+         * @param scale scale ratio of the map
+         */
+        createLegends: function (legendType, elems, scale) {
+            var self = this;
+            var legendsOptions = self.options.legend[legendType];
+
+            if (!$.isArray(self.options.legend[legendType])) {
+                legendsOptions = [self.options.legend[legendType]];
+            }
+
+            for (var j = 0; j < legendsOptions.length; ++j) {
+                // Check for class existence
+                if (legendsOptions[j].cssClass === "" || $("." + legendsOptions[j].cssClass, self.$container).length === 0) {
+                    throw new Error("The legend class `" + legendsOptions[j].cssClass + "` doesn't exists.");
+                }
+                if (legendsOptions[j].display === true && $.isArray(legendsOptions[j].slices) && legendsOptions[j].slices.length > 0) {
+                    self.drawLegend(legendsOptions[j], legendType, elems, scale, j);
+                }
+            }
+        },
+
+        /*
+         * Set the attributes on hover and the attributes to restore for a map element
+         * @param elem the map element
+         * @param originalAttrs the original attributes to restore on mouseout event
+         * @param attrsHover the attributes to set on mouseover event
+         */
+        setHoverOptions: function (elem, originalAttrs, attrsHover) {
+            // Disable transform option on hover for VML (IE<9) because of several bugs
+            if (Raphael.type != "SVG") delete attrsHover.transform;
+            elem.attrsHover = attrsHover;
+
+            if (elem.attrsHover.transform) elem.originalAttrs = $.extend({transform: "s1"}, originalAttrs);
+            else elem.originalAttrs = originalAttrs;
+        },
+
+        /*
+         * Set the hover behavior (mouseover & mouseout) for plots and areas
+         * @param mapElem the map element
+         * @param textElem the optional text element (within the map element)
+         */
+        setHover: function (mapElem, textElem) {
+            var self = this;
+            var $mapElem = {};
+            var $textElem = {};
+            var mouseoverTimeout = 0;
+            var mouseoutTimeout = 0;
+            var overBehaviour = function () {
+                clearTimeout(mouseoutTimeout);
+                mouseoverTimeout = setTimeout(function () {
+                    self.elemHover(mapElem, textElem);
+                }, 120);
+            };
+            var outBehaviour = function () {
+                clearTimeout(mouseoverTimeout);
+                mouseoutTimeout = setTimeout(function(){
+                    self.elemOut(mapElem, textElem);                
+                }, 120);
+            };
+
+            $mapElem = $(mapElem.node);
+            $mapElem.on("mouseover." + pluginName, overBehaviour);
+            $mapElem.on("mouseout." + pluginName, outBehaviour);
+
+            if (textElem) {
+                $textElem = $(textElem.node);
+                $textElem.on("mouseover." + pluginName, overBehaviour);
+                $(textElem.node).on("mouseout." + pluginName, outBehaviour);
+            }
+        },
+
+        /*
+         * Remove the hover behavior for plots and areas
+         * @param mapElem the map element
+         * @param textElem the optional text element (within the map element)
+         */
+        unsetHover: function (mapElem, textElem) {
+            $(mapElem.node).off("." + pluginName);
+            if (textElem) $(textElem.node).off("." + pluginName);
+        },
+
+        /*
+         * Set he behaviour for "mouseover" event
+         * @param mapElem mapElem the map element
+         * @param textElem the optional text element (within the map element)
+         */
+        elemHover: function (mapElem, textElem) {
+            var self = this;
+            // Set mapElem
+            if (mapElem.attrsHover.animDuration > 0) mapElem.animate(mapElem.attrsHover, mapElem.attrsHover.animDuration);
+            else mapElem.attr(mapElem.attrsHover);
+            // Set textElem
+            if (textElem) {
+                if (textElem.attrsHover.animDuration > 0) textElem.animate(textElem.attrsHover, textElem.attrsHover.animDuration);
+                else textElem.attr(textElem.attrsHover);
+            }
+            // workaround for older version of Raphael
+            if (self.paper.safari) self.paper.safari();
+        },
+
+        /*
+         * Set he behaviour for "mouseout" event
+         * @param mapElem the map element
+         * @param textElem the optional text element (within the map element)
+         */
+        elemOut: function (mapElem, textElem) {
+            var self = this;
+            // Set mapElem
+            if (mapElem.attrsHover.animDuration > 0) mapElem.animate(mapElem.originalAttrs, mapElem.attrsHover.animDuration);
+            else mapElem.attr(mapElem.originalAttrs);
+            // Set textElem
+            if (textElem) {
+                if (textElem.attrsHover.animDuration > 0) textElem.animate(textElem.originalAttrs, textElem.attrsHover.animDuration);
+                else textElem.attr(textElem.originalAttrs);
+            }
+
+            // workaround for older version of Raphael
+            if (self.paper.safari) self.paper.safari();
+        },
+
+        /*
+         * Get element options by merging default options, element options and legend options
+         * @param defaultOptions
+         * @param elemOptions
+         * @param legendOptions
+         */
+        getElemOptions: function (defaultOptions, elemOptions, legendOptions) {
+            var self = this;
+            var options = $.extend(true, {}, defaultOptions, elemOptions);
+            if (options.value !== undefined) {
+                if ($.isArray(legendOptions)) {
+                    for (var i = 0, length = legendOptions.length; i < length; ++i) {
+                        options = $.extend(true, {}, options, self.getLegendSlice(options.value[i], legendOptions[i]));
+                    }
+                } else {
+                    options = $.extend(true, {}, options, self.getLegendSlice(options.value, legendOptions));
+                }
+            }
+            return options;
+        },
+
+        /*
+         * Get the coordinates of the text relative to a bbox and a position
+         * @param bbox the boundary box of the element
+         * @param textPosition the wanted text position (inner, right, left, top or bottom)
+         * @param margin number or object {x: val, y:val} margin between the bbox and the text
+         */
+        getTextPosition: function (bbox, textPosition, margin) {
+            var textX = 0;
+            var textY = 0;
+            var textAnchor = "";
+
+            if (typeof margin === "number") {
+                if (textPosition === "bottom" || textPosition === "top") {
+                    margin = {x: 0, y: margin};
+                } else if (textPosition === "right" || textPosition === "left") {
+                    margin = {x: margin, y: 0};
+                } else {
+                    margin = {x: 0, y: 0};
+                }
+            }
+
+            switch (textPosition) {
+                case "bottom" :
+                    textX = ((bbox.x + bbox.x2) / 2) + margin.x;
+                    textY = bbox.y2 + margin.y;
+                    textAnchor = "middle";
+                    break;
+                case "top" :
+                    textX = ((bbox.x + bbox.x2) / 2) + margin.x;
+                    textY = bbox.y - margin.y;
+                    textAnchor = "middle";
+                    break;
+                case "left" :
+                    textX = bbox.x - margin.x;
+                    textY = ((bbox.y + bbox.y2) / 2) + margin.y;
+                    textAnchor = "end";
+                    break;
+                case "right" :
+                    textX = bbox.x2 + margin.x;
+                    textY = ((bbox.y + bbox.y2) / 2) + margin.y;
+                    textAnchor = "start";
+                    break;
+                default : // "inner" position
+                    textX = ((bbox.x + bbox.x2) / 2) + margin.x;
+                    textY = ((bbox.y + bbox.y2) / 2) + margin.y;
+                    textAnchor = "middle";
+            }
+            return {"x": textX, "y": textY, "textAnchor": textAnchor};
+        },
+
+        /*
+         * Get the legend conf matching with the value
+         * @param value the value to match with a slice in the legend
+         * @param legend the legend params object
+         * @return the legend slice matching with the value
+         */
+        getLegendSlice: function (value, legend) {
+            for (var i = 0, length = legend.slices.length; i < length; ++i) {
+                if ((legend.slices[i].sliceValue !== undefined && value == legend.slices[i].sliceValue)
+                    || ((legend.slices[i].sliceValue === undefined)
+                    && (legend.slices[i].min === undefined || value >= legend.slices[i].min)
+                    && (legend.slices[i].max === undefined || value <= legend.slices[i].max))
+                ) {
+                    return legend.slices[i];
+                }
+            }
+            return {};
+        },
+
+        /*
+         * Animated view box changes
+         * As from http://code.voidblossom.com/animating-viewbox-easing-formulas/,
+         * (from https://github.com/theshaun works on mapael)
+         * @param x coordinate of the point to focus on
+         * @param y coordinate of the point to focus on
+         * @param w map defined width
+         * @param h map defined height
+         * @param duration defined length of time for animation
+         * @param easingFunction defined Raphael supported easing_formula to use
+         * @param callback method when animated action is complete
+         */
+        animateViewBox: function (x, y, w, h, duration, easingFunction) {
+            var self = this;
+            var cx = self.paper._viewBox ? self.paper._viewBox[0] : 0;
+            var dx = x - cx;
+            var cy = self.paper._viewBox ? self.paper._viewBox[1] : 0;
+            var dy = y - cy;
+            var cw = self.paper._viewBox ? self.paper._viewBox[2] : self.paper.width;
+            var dw = w - cw;
+            var ch = self.paper._viewBox ? self.paper._viewBox[3] : self.paper.height;
+            var dh = h - ch;
+            var interval = 25;
+            var steps = duration / interval;
+            var currentStep = 0;
+            var easingFormula;
+
+            easingFunction = easingFunction || "linear";
+            easingFormula = Raphael.easing_formulas[easingFunction];
+
+            clearInterval(self.animationIntervalID);
+
+            self.animationIntervalID = setInterval(function () {
+                    var ratio = currentStep / steps;
+                    self.paper.setViewBox(cx + dx * easingFormula(ratio),
+                        cy + dy * easingFormula(ratio),
+                        cw + dw * easingFormula(ratio),
+                        ch + dh * easingFormula(ratio), false);
+                    if (currentStep++ >= steps) {
+                        clearInterval(self.animationIntervalID);
+                        clearTimeout(self.zoomTO);
+                        self.zoomTO = setTimeout(function () {
+                            self.$map.trigger("afterZoom", {x1: x, y1: y, x2: (x + w), y2: (y + h)});
+                        }, 150);
+                    }
+                }, interval
+            );
+        },
+
+        /*
+          * Check for Raphael bug regarding drawing while beeing hidden (under display:none)
+          * See https://github.com/neveldo/jQuery-Mapael/issues/135
+          * @return true/false
+          *
+          * Wants to override this behavior? Use prototype overriding:
+          *     $.mapael.prototype.isRaphaelBBoxBugPresent = function() {return false;};
+          */
+        isRaphaelBBoxBugPresent: function(){
+            var self = this;
+            // Draw text, then get its boundaries
+            var text_elem = self.paper.text(-50, -50, "TEST");
+            var text_elem_bbox = text_elem.getBBox();
+            // remove element
+            text_elem.remove();
+            // If it has no height and width, then the paper is hidden
+            return (text_elem_bbox.width === 0 && text_elem_bbox.height === 0);
+        },
+
+        // Default map options
+        defaultOptions: {
+            map: {
+                cssClass: "map",
+                tooltip: {
+                    cssClass: "mapTooltip"
+                },
+                defaultArea: {
+                    attrs: {
+                        fill: "#343434",
+                        stroke: "#5d5d5d",
+                        "stroke-width": 1,
+                        "stroke-linejoin": "round"
+                    },
+                    attrsHover: {
+                        fill: "#f38a03",
+                        animDuration: 300
+                    },
+                    text: {
+                        position: "inner",
+                        margin: 10,
+                        attrs: {
+                            "font-size": 15,
+                            fill: "#c7c7c7"
+                        },
+                        attrsHover: {
+                            fill: "#eaeaea",
+                            "animDuration": 300
+                        }
+                    },
+                    target: "_self"
+                },
+                defaultPlot: {
+                    type: "circle",
+                    size: 15,
+                    attrs: {
+                        fill: "#0088db",
+                        stroke: "#fff",
+                        "stroke-width": 0,
+                        "stroke-linejoin": "round"
+                    },
+                    attrsHover: {
+                        "stroke-width": 3,
+                        animDuration: 300
+                    },
+                    text: {
+                        position: "right",
+                        margin: 10,
+                        attrs: {
+                            "font-size": 15,
+                            fill: "#c7c7c7"
+                        },
+                        attrsHover: {
+                            fill: "#eaeaea",
+                            animDuration: 300
+                        }
+                    },
+                    target: "_self"
+                },
+                defaultLink: {
+                    factor: 0.5,
+                    attrs: {
+                        stroke: "#0088db",
+                        "stroke-width": 2
+                    },
+                    attrsHover: {
+                        animDuration: 300
+                    },
+                    text: {
+                        position: "inner",
+                        margin: 10,
+                        attrs: {
+                            "font-size": 15,
+                            fill: "#c7c7c7"
+                        },
+                        attrsHover: {
+                            fill: "#eaeaea",
+                            animDuration: 300
+                        }
+                    },
+                    target: "_self"
+                },
+                zoom: {
+                    enabled: false,
+                    minLevel: 0,
+                    maxLevel: 10,
+                    step: 0.25,
+                    mousewheel: true,
+                    touch: true,
+                    animDuration: 200,
+                    animEasing: "linear",
+                    buttons: {
+                        "reset": {
+                            cssClass: "zoomButton zoomReset",
+                            content: "&#8226;", // bullet sign
+                            title: "Reset zoom"
+                        },
+                        "in": {
+                            cssClass: "zoomButton zoomIn",
+                            content: "+",
+                            title: "Zoom in"
+                        },
+                        "out": {
+                            cssClass: "zoomButton zoomOut",
+                            content: "&#8722;", // minus sign
+                            title: "Zoom out"
+                        }
+                    }
+                }
+            },
+            legend: {
+                area: [],
+                plot: []
+            },
+            areas: {},
+            plots: {},
+            links: {}
+        },
+
+        // Default legends option
+        legendDefaultOptions: {
+            area: {
+                cssClass: "areaLegend",
+                display: true,
+                marginLeft: 10,
+                marginLeftTitle: 5,
+                marginBottomTitle: 10,
+                marginLeftLabel: 10,
+                marginBottom: 10,
+                titleAttrs: {
+                    "font-size": 16,
+                    fill: "#343434",
+                    "text-anchor": "start"
+                },
+                labelAttrs: {
+                    "font-size": 12,
+                    fill: "#343434",
+                    "text-anchor": "start"
+                },
+                labelAttrsHover: {
+                    fill: "#787878",
+                    animDuration: 300
+                },
+                hideElemsOnClick: {
+                    enabled: true,
+                    opacity: 0.2,
+                    animDuration: 300
+                },
+                slices: [],
+                mode: "vertical"
+            },
+            plot: {
+                cssClass: "plotLegend",
+                display: true,
+                marginLeft: 10,
+                marginLeftTitle: 5,
+                marginBottomTitle: 10,
+                marginLeftLabel: 10,
+                marginBottom: 10,
+                titleAttrs: {
+                    "font-size": 16,
+                    fill: "#343434",
+                    "text-anchor": "start"
+                },
+                labelAttrs: {
+                    "font-size": 12,
+                    fill: "#343434",
+                    "text-anchor": "start"
+                },
+                labelAttrsHover: {
+                    fill: "#787878",
+                    animDuration: 300
+                },
+                hideElemsOnClick: {
+                    enabled: true,
+                    opacity: 0.2,
+                    animDuration: 300
+                },
+                slices: [],
+                mode: "vertical"
+            }
+        }
+
+    };
+
+    // Extend jQuery with Mapael
+    if ($[pluginName] === undefined) $[pluginName] = Mapael;
+
+    // Add jQuery DOM function
+    $.fn[pluginName] = function (options) {
+        // Call Mapael on each element
+        return this.each(function () {
+            // Avoid leaking problem on multiple instanciation by removing an old mapael object on a container
+            if ($.data(this, pluginName)) {
+                $.data(this, pluginName).destroy();
+            }
+            // Create Mapael and save it as jQuery data
+            // This allow external access to Mapael using $(".mapcontainer").data("mapael")
+            $.data(this, pluginName, new Mapael(this, options));
+        });
+    };
+
+}));
