@@ -53,6 +53,7 @@
         <li><a href="svg-to-mapael.php" target="_blank">"SVG to Mapael" tool</a></li>
         <li><a href="mapael-to-svg.php" target="_blank">"Mapael to SVG" tool</a></li>
         <li><a href="getcoords.php" target="_blank">getCoords() generator</a></li>
+        <li><a href="https://github.com/SVG-Edit/svgedit" target="_blank">SVG-edit</a></li>
     </ul>
 
     <h2 id="first-step">
@@ -243,7 +244,18 @@
 
     <p>Your map for mapael is now complete ! Take a look at the mapael documentation to see what you can do with it. Feel free to contribute to mapael-maps repository (https://github.com/neveldo/mapael-maps) by adding your new map !</p>
 
-    <p>You want to bring some changes to an existing Mapael map through Inkscape ? You still can transform a Mapael map to an SVG file with the <strong><a href="mapael-to-svg.php" target="_blank">"Mapael to SVG" tool</a></strong>.</p>
+    <div class="jumbotron">
+        <h2 style="padding-top:0px;">Editing existing maps</h2>
+    </div>
+
+    <li>You want to bring some changes to an existing Mapael map through Inkscape ? You still can transform a Mapael map to an SVG file with the <strong><a href="mapael-to-svg.php" target="_blank">"Mapael to SVG" tool</a></strong>.</li>
+
+    <li>Another alternative is to copy existing SVG paths from the source file into an SVG editor, like <a href="https://github.com/SVG-Edit/svgedit" target="_blank">SVG-edit</a>. <br>
+        For example, if you want to an additional country to a map, you first start by drawing a random line with the Pencil Tool. Then you open the SVG editor (the "&ltSVG&gt" button) and paste the SVG paths of the country you wish to add a neighbouring country to. This way you will have a reference to add the new country. <br>
+        Then you either draw the new country yourself, or use the SVG paths from a SVG file you found somewhere and use the same method to paste it in the SVG editor. <br>
+        Now you only have to copy the SVG paths from SVG-edit into the map source file with a new label and you're done.
+    </li>
+
 
 </div>
 
