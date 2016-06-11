@@ -6,19 +6,33 @@
 
 // Map template
 $template = <<<EOD
-/**
-*
-* Jquery Mapael - Dynamic maps jQuery plugin (based on raphael.js)
-* Requires jQuery and raphael.js
-*
-* Map of '%name%'
+/*!
+ *
+ * Jquery Mapael - Dynamic maps jQuery plugin (based on raphael.js)
+ * Requires jQuery and Mapael >=2.0.0
+ *
+ * Map of %name%
+ * 
+ * @author %author%
+ */
+(function (factory) {
+    if (typeof exports === 'object') {
+        // CommonJS
+        module.exports = factory(require('jquery'), require('mapael'));
+    } else if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery', 'mapael'], factory);
+    } else {
+        // Browser globals
+        factory(jQuery, jQuery.mapael);
+    }
+}(function ($, Mapael) {
 
-* @author %author%
-*/
-(function($) {
-    $.extend(true, $.fn.mapael, 
+    "use strict";
+    
+    $.extend(true, Mapael,
         {
-            maps :{
+            maps :  {
                 %js_name% : {
                     width : %width%,
                     height : %height%,
@@ -26,14 +40,17 @@ $template = <<<EOD
                         // todo
                         return {"x" : lat, "y" : lon};
                     },
-                    elems : {
+                    'elems': {
 %areas%
                     }
                 }
             }
         }
     );
-})(jQuery);
+
+    return Mapael;
+
+}));
 EOD;
 
 /**
