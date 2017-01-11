@@ -139,7 +139,7 @@ circle2.animate(anim.delay(<span class="d">500</span>)); <span class="c">// run 
 <p class="dr-returns"><strong class="dr-title">Returns:</strong> <em class="dr-type-object">object</em> <span class="dr-description">object of attributes if nothing is passed in.</span></p>
 <p class="header">Possible parameters
 </p>
-<p>Please refer to the <a href="/web/20160121064823/http://www.w3.org/TR/SVG/" title="The W3C Recommendation for the SVG language describes these properties in detail.">SVG specification</a> for an explanation of these parameters.</p>
+<p>Please refer to the <a href="/web/20160121064823/https://www.w3.org/TR/SVG/" title="The W3C Recommendation for the SVG language describes these properties in detail.">SVG specification</a> for an explanation of these parameters.</p>
 <ol class="dr-json"><li><span class="dr-json-key">arrow-end</span><span class="dr-type"><em class="dr-type-string">string</em></span><span class="dr-json-description">arrowhead on the end of the path. The format for string is <code>&lt;type>[-&lt;width>[-&lt;length>]]</code>. Possible types: <code>classic</code>, <code>block</code>, <code>open</code>, <code>oval</code>, <code>diamond</code>, <code>none</code>, width: <code>wide</code>, <code>narrow</code>, <code>midium</code>, length: <code>long</code>, <code>short</code>, <code>midium</code>.</span>
 <li><span class="dr-json-key">clip-rect</span><span class="dr-type"><em class="dr-type-string">string</em></span><span class="dr-json-description">comma or space separated values: x, y, width and height</span>
 <li><span class="dr-json-key">cursor</span><span class="dr-type"><em class="dr-type-string">string</em></span><span class="dr-json-description">CSS type of the cursor</span>
@@ -185,7 +185,7 @@ at 0.25, 0.75. Focus point coordinates are in 0..1 range. Radial gradients can o
 </p>
 <p class="header">Path String
 </p>
-<p>Please refer to <a href="/web/20160121064823/http://www.w3.org/TR/SVG/paths.html#PathData" title="Details of a path’s data attribute’s format are described in the SVG specification.">SVG documentation regarding path string</a>. Raphaël fully supports it.</p>
+<p>Please refer to <a href="/web/20160121064823/https://www.w3.org/TR/SVG/paths.html#PathData" title="Details of a path’s data attribute’s format are described in the SVG specification.">SVG documentation regarding path string</a>. Raphaël fully supports it.</p>
 <p class="header">Colour Parsing
 </p>
 <ul>
@@ -199,7 +199,7 @@ at 0.25, 0.75. Focus point coordinates are in 0..1 range. Radial gradients can o
     <li>hsb(•••, •••, •••) — hue, saturation and brightness values: (“<code>hsb(0.5,&nbsp;0.25,&nbsp;1)</code>”)</li>
     <li>hsb(•••%, •••%, •••%) — same as above, but in %</li>
     <li>hsba(•••, •••, •••, •••) — same as above, but with opacity</li>
-    <li>hsl(•••, •••, •••) — almost the same as hsb, see <a href="/web/20160121064823/http://en.wikipedia.org/wiki/HSL_and_HSV" title="HSL and HSV - Wikipedia, the free encyclopedia">Wikipedia page</a></li>
+    <li>hsl(•••, •••, •••) — almost the same as hsb, see <a href="/web/20160121064823/https://en.wikipedia.org/wiki/HSL_and_HSV" title="HSL and HSV - Wikipedia, the free encyclopedia">Wikipedia page</a></li>
     <li>hsl(•••%, •••%, •••%) — same as above, but in %</li>
     <li>hsla(•••, •••, •••, •••) — same as above, but with opacity</li>
     <li>Optionally for hsb and hsl you could specify hue as a degree: “<code>hsl(240deg,&nbsp;1,&nbsp;.5)</code>” or, if you want to go fancy, “<code>hsl(240°,&nbsp;1,&nbsp;.5)</code>”</li>
@@ -1261,7 +1261,7 @@ c.animate({hsb: [<span class="d">1</span>, <span class="d">0</span>, <span class
 <p>Here we can see two commands: “M”, with arguments <code>(10, 20)</code> and “L” with arguments <code>(30, 40)</code>. Upper case letter mean command is absolute, lower case—relative.
 </p>
 <p></p>
-<p>Here is short list of commands available, for more details see <a href="/web/20160121064823/http://www.w3.org/TR/SVG/paths.html#PathData" title="Details of a path's data attribute's format are described in the SVG specification.">SVG path string format</a>.</p>
+<p>Here is short list of commands available, for more details see <a href="/web/20160121064823/https://www.w3.org/TR/SVG/paths.html#PathData" title="Details of a path's data attribute's format are described in the SVG specification.">SVG path string format</a>.</p>
 <table><thead><tr><th>Command</th><th>Name</th><th>Parameters</th></tr></thead><tbody>
 <tr><td>M</td><td>moveto</td><td>(x y)+</td></tr>
 <tr><td>Z</td><td>closepath</td><td>(none)</td></tr>
@@ -1273,7 +1273,7 @@ c.animate({hsb: [<span class="d">1</span>, <span class="d">0</span>, <span class
 <tr><td>Q</td><td>quadratic Bézier curveto</td><td>(x1 y1 x y)+</td></tr>
 <tr><td>T</td><td>smooth quadratic Bézier curveto</td><td>(x y)+</td></tr>
 <tr><td>A</td><td>elliptical arc</td><td>(rx ry x-axis-rotation large-arc-flag sweep-flag x y)+</td></tr>
-<tr><td>R</td><td><a href="/web/20160121064823/http://en.wikipedia.org/wiki/Catmull%E2%80%93Rom_spline#Catmull.E2.80.93Rom_spline">Catmull-Rom curveto</a>*</td><td>x1 y1 (x y)+</td></tr></tbody></table>
+<tr><td>R</td><td><a href="/web/20160121064823/https://en.wikipedia.org/wiki/Catmull%E2%80%93Rom_spline#Catmull.E2.80.93Rom_spline">Catmull-Rom curveto</a>*</td><td>x1 y1 (x y)+</td></tr></tbody></table>
 <p>* “Catmull-Rom curveto” is a not standard SVG command and added in 2.0 to make life easier.
 Note: there is a special case when path consist of just three commands: “M10,10R…z”. In this case path will smoothly connects to its beginning.
 </p>
@@ -1283,7 +1283,7 @@ Note: there is a special case when path consist of just three commands: “M10,1
 <span class="c">// draw a diagonal line:</span>
 <span class="c">// move to <span class="d">10</span>,<span class="d">10</span>, line to <span class="d">90</span>,<span class="d">90</span></span>
 </code></pre>
-<p>For example of path strings, check out these icons: <a href="/web/20160121064823/http://raphaeljs.com/icons/" rel="external">http://raphaeljs.com/icons/</a>
+<p>For example of path strings, check out these icons: <a href="/web/20160121064823/https://raphaeljs.com/icons/" rel="external">https://raphaeljs.com/icons/</a>
 </p>
 </div><div class="Paper-print-section"><h3 id="Paper.print" class="dr-method"><i class="dr-trixie">&#160;</i>Paper.print(x, y, string, font, [size], [origin], [letter_spacing])<a href="#Paper.print" title="Link to this section" class="dr-hash">&#x2693;</a><a class="dr-sourceline" title="Go to line 4977 in the source" href="/web/20160121064823/https://github.com/DmitryBaranovskiy/raphael/blob/master/raphael.core.js#L4977">&#x27ad;</a></h3>
 <div class="extra" id="Paper.print-extra"></div></div><div class="dr-method"><p>Creates path that represent given text written using given font at given position with given size.
@@ -1677,7 +1677,7 @@ Return bounding box of a given cubic bezier curve
     <li>“elastic”</li>
     <li>“bounce”</li>
 </ul>
-<p>See also <a href="/web/20160121064823/http://raphaeljs.com/easing.html">Easing demo</a>.</p>
+<p>See also <a href="/web/20160121064823/https://raphaeljs.com/easing.html">Easing demo</a>.</p>
 </div><div class="Raphael-el-section"><h3 id="Raphael.el" class="dr-property"><i class="dr-trixie">&#160;</i>Raphael.el<a href="#Raphael.el" title="Link to this section" class="dr-hash">&#x2693;</a><a class="dr-sourceline" title="Go to line 2788 in the source" href="/web/20160121064823/https://github.com/DmitryBaranovskiy/raphael/blob/master/raphael.core.js#L2788">&#x27ad;</a></h3>
 <div class="extra" id="Raphael.el-extra"></div></div><div class="dr-property"><em class="dr-type dr-type-object">object</em><p>You can add your own method to elements. This is usefull when you want to hack default functionality or
 want to wrap some common transformation or attributes in one method. In difference to canvas methods,
@@ -2180,7 +2180,7 @@ Converts path to relative form
 <div class="extra" id="Raphael.registerFont-extra"></div></div><div class="dr-method"><p>Adds given font to the registered set of fonts for Raphaël. Should be used as an internal call from within Cufón’s font file.
 Returns original parameter, so it could be used with chaining.
 </p>
-<a href="/web/20160121064823/http://wiki.github.com/sorccu/cufon/about">More about Cufón and how to convert your font form TTF, OTF, etc to JavaScript file.</a>
+<a href="/web/20160121064823/https://wiki.github.com/sorccu/cufon/about">More about Cufón and how to convert your font form TTF, OTF, etc to JavaScript file.</a>
 <p class="header">Parameters
 </p>
 <dl class="dr-parameters"><dt class="dr-param">font</dt>

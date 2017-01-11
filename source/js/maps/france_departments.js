@@ -7,7 +7,7 @@
  * Equirectangular projection
  *
  * @author Vincent Brouté
- * @source http://fr.m.wikipedia.org/wiki/Fichier:France_location_map-Departements.svg
+ * @source https://fr.m.wikipedia.org/wiki/Fichier:France_location_map-Departements.svg
  */
 (function (factory) {
     if (typeof exports === 'object') {

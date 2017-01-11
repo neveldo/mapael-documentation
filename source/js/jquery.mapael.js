@@ -5,8 +5,8 @@
  *
  * Version: 2.0.0-dev
  *
- * Copyright (c) 2015 Vincent Brouté (http://www.vincentbroute.fr/mapael)
- * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
+ * Copyright (c) 2015 Vincent Brouté (https://www.vincentbroute.fr/mapael)
+ * Licensed under the MIT license (https://www.opensource.org/licenses/mit-license.php).
  *
  * Thanks to Indigo744
  *
@@ -29,7 +29,7 @@
     // The plugin name (used on several places)
     var pluginName = "mapael";
 
-    // Version number of jQuery Mapael. See http://semver.org/ for more information.
+    // Version number of jQuery Mapael. See https://semver.org/ for more information.
     var version = "2.0.0-dev";
 
     /*
@@ -245,7 +245,7 @@
             // Hook that allows to add custom processing on the map
             if (self.options.map.afterInit) self.options.map.afterInit(self.$container, self.paper, self.areas, self.plots, self.options);
 
-            $(self.paper.desc).append(" and Mapael " + self.version + " (http://www.vincentbroute.fr/mapael/)");
+            $(self.paper.desc).append(" and Mapael " + self.version + " (https://www.vincentbroute.fr/mapael/)");
         },
 
         /*
@@ -1962,7 +1962,7 @@
 
         /*
          * Animated view box changes
-         * As from http://code.voidblossom.com/animating-viewbox-easing-formulas/,
+         * As from https://code.voidblossom.com/animating-viewbox-easing-formulas/,
          * (from https://github.com/theshaun works on mapael)
          * @param x coordinate of the point to focus on
          * @param y coordinate of the point to focus on

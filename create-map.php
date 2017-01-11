@@ -62,12 +62,12 @@
 
     <div class="clearfix">
         <img src="assets/img/create-map-1.png"style="float:right;margin-left:10px;" />
-        <p>The first step is to find an SVG map file. You can find many maps on SVG format with a Creative Commons license on the web. You can find this kind of resources on <a href="http://www.naturalearthdata.com">Natural Earth Data</a> or <a href="http://commons.wikimedia.org/wiki/Category:SVG_maps">Wikimedia Commons</a>.
-            A map is based on a specific projection such as mercator, Miller, Lambert or equirectangular projection. Here is a <a href="http://en.wikipedia.org/wiki/List_of_map_projections" target="_blank">list of map projections</a>.</p>
+        <p>The first step is to find an SVG map file. You can find many maps on SVG format with a Creative Commons license on the web. You can find this kind of resources on <a href="https://www.naturalearthdata.com">Natural Earth Data</a> or <a href="https://commons.wikimedia.org/wiki/Category:SVG_maps">Wikimedia Commons</a>.
+            A map is based on a specific projection such as mercator, Miller, Lambert or equirectangular projection. Here is a <a href="https://en.wikipedia.org/wiki/List_of_map_projections" target="_blank">list of map projections</a>.</p>
 
-        <p>If you want to plot cities by latitude and longitude on your map, you have to care about the projection that is used on the choosen map. Indeed, the algorithm to convert a latitude and a longitude to x and y coordinates depends on the map projection. The simpliest projection is the equirectangular one (see below fore more information). http://commons.wikimedia.org/wiki/Main_Page</p>
+        <p>If you want to plot cities by latitude and longitude on your map, you have to care about the projection that is used on the choosen map. Indeed, the algorithm to convert a latitude and a longitude to x and y coordinates depends on the map projection. The simpliest projection is the equirectangular one (see below fore more information). https://commons.wikimedia.org/wiki/Main_Page</p>
 
-        <p>Here is the <a href="http://commons.wikimedia.org/wiki/File:United_Kingdom_NUTS_location_map.svg" target="_blank">map of of United kingdom</a> with an equirectangular projection and under SVG format.</p>
+        <p>Here is the <a href="https://commons.wikimedia.org/wiki/File:United_Kingdom_NUTS_location_map.svg" target="_blank">map of of United kingdom</a> with an equirectangular projection and under SVG format.</p>
     </div>
 
     <h2 id="refine-the-map">
@@ -260,8 +260,8 @@
 </div>
 
 
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shCore.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shBrushJScript.min.js"></script>

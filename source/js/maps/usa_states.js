@@ -5,7 +5,7 @@
  *
  * Map of USA by state
  * 
- * @source http://the55.net/_11/sketch/us_map
+ * @source https://the55.net/_11/sketch/us_map
  */
 (function (factory) {
     if (typeof exports === 'object') {

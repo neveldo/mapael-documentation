@@ -6,7 +6,7 @@
  * Map of World by country
  * Miller projection
  *
- * @source http://code.highcharts.com/mapdata/
+ * @source https://code.highcharts.com/mapdata/
  */
 (function (factory) {
     if (typeof exports === 'object') {
@@ -73,7 +73,7 @@
                  *      Projection(lat, lon) = (x', y')
                  *      Transformation(x', y') = (x, y)
                  *
-                 * Source: http://jkwiens.com/2009/01/23/miller-projection/
+                 * Source: https://jkwiens.com/2009/01/23/miller-projection/
                  *
                  * @param lat latitude value in degree
                  * @param lon longitude value in degree

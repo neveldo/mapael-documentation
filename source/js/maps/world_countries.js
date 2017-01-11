@@ -5,7 +5,7 @@
  *
  * Map of World by country
  * 
- * @source http://backspace.com/mapapp/javascript_world/
+ * @source https://backspace.com/mapapp/javascript_world/
  */
 
 (function (factory) {
