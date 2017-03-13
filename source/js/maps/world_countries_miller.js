@@ -6,12 +6,12 @@
  * Map of World by country
  * Miller projection
  *
- * @source https://code.highcharts.com/mapdata/
+ * @source http://code.highcharts.com/mapdata/
  */
 (function (factory) {
     if (typeof exports === 'object') {
         // CommonJS
-        module.exports = factory(require('jquery'), require('mapael'));
+        module.exports = factory(require('jquery'), require('jquery-mapael'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['jquery', 'mapael'], factory);
@@ -73,7 +73,7 @@
                  *      Projection(lat, lon) = (x', y')
                  *      Transformation(x', y') = (x, y)
                  *
-                 * Source: https://jkwiens.com/2009/01/23/miller-projection/
+                 * Source: http://jkwiens.com/2009/01/23/miller-projection/
                  *
                  * @param lat latitude value in degree
                  * @param lon longitude value in degree

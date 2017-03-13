@@ -3,10 +3,10 @@
  * Jquery Mapael - Dynamic maps jQuery plugin (based on raphael.js)
  * Requires jQuery, raphael.js and jquery.mousewheel
  *
- * Version: 2.0.0-dev
+ * Version: 2.1.0
  *
- * Copyright (c) 2015 Vincent Brouté (https://www.vincentbroute.fr/mapael)
- * Licensed under the MIT license (https://www.opensource.org/licenses/mit-license.php).
+ * Copyright (c) 2017 Vincent Brouté (https://www.vincentbroute.fr/mapael)
+ * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
  *
  * Thanks to Indigo744
  *
@@ -14,7 +14,7 @@
 (function (factory) {
     if (typeof exports === 'object') {
         // CommonJS
-        module.exports = factory(require('jquery'), require('raphael'), require('mousewheel'));
+        module.exports = factory(require('jquery'), require('raphael'), require('jquery-mousewheel'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['jquery', 'raphael', 'mousewheel'], factory);
@@ -29,8 +29,8 @@
     // The plugin name (used on several places)
     var pluginName = "mapael";
 
-    // Version number of jQuery Mapael. See https://semver.org/ for more information.
-    var version = "2.0.0-dev";
+    // Version number of jQuery Mapael. See http://semver.org/ for more information.
+    var version = "2.1.0";
 
     /*
      * Mapael constructor
@@ -49,9 +49,6 @@
 
         // the global options
         self.options = self.extendDefaultOptions(options);
-
-        // Save initial HTML content (used by destroy method)
-        self.initialHTMLContent = self.$container.html();
 
         // zoom TimeOut handler (used to set and clear)
         self.zoomTO = 0;
@@ -85,7 +82,13 @@
         self.animationIntervalID = null;
 
         // Map subcontainer jQuery object
-        self.$map = {};
+        self.$map = $("." + self.options.map.cssClass, self.container);
+
+        // Save initial HTML content (used by destroy method)
+        self.initialMapHTMLContent = self.$map.html();
+
+        // Allow to store legend containers and initial contents (used by destroy method)
+        self.createdLegends = {};
 
         // The tooltip jQuery object
         self.$tooltip = {};
@@ -137,7 +140,7 @@
             self.$tooltip = $("<div>").addClass(self.options.map.tooltip.cssClass).css("display", "none");
 
             // Get the map container, empty it then append tooltip
-            self.$map = $("." + self.options.map.cssClass, self.container).empty().append(self.$tooltip);
+            self.$map.empty().append(self.$tooltip);
 
             // Get the map from $.mapael or $.fn.mapael (backward compatibility)
             if ($[pluginName] && $[pluginName].maps && $[pluginName].maps[self.options.map.name]) {
@@ -226,7 +229,7 @@
                 if (self.options.map.zoom.init.animDuration === undefined) {
                     self.options.map.zoom.init.animDuration = 0;
                 }
-                self.$container.trigger("zoom." + pluginName, self.options.map.zoom.init);
+                self.$container.trigger("zoom", self.options.map.zoom.init);
             }
 
             // Create the legends for areas
@@ -265,17 +268,29 @@
 
             // Detach all event listeners attached to the container
             self.$container.off("." + pluginName);
+            self.$map.off("." + pluginName);
 
-            // Empty the container (this will also detach all event listeners)
-            self.$container.empty();
             // Detach the global resize event handler
             if (self.onResizeEvent) $(window).off("resize." + pluginName, self.onResizeEvent);
+
+            // Empty the container (this will also detach all event listeners)
+            self.$map.empty();
+
             // Replace initial HTML content
-            self.$container.html(self.initialHTMLContent);
+            self.$map.html(self.initialMapHTMLContent);
+
+            // Empty legend containers and replace initial HTML content
+            for (var id in self.createdLegends) {
+                self.createdLegends[id].container.empty();
+                self.createdLegends[id].container.html(self.createdLegends[id].initialHTMLContent);
+            }
+
             // Remove mapael class
             self.$container.removeClass(pluginName);
+
             // Remove the data
             self.$container.removeData(pluginName);
+
             // Remove all internal reference
             self.container = undefined;
             self.$container = undefined;
@@ -300,7 +315,7 @@
                 clearTimeout(self.resizeTO);
                 // setTimeout to wait for the user to finish its resizing
                 self.resizeTO = setTimeout(function () {
-                    self.$map.trigger("resizeEnd." + pluginName);
+                    self.$map.trigger("resizeEnd");
                 }, 150);
             };
 
@@ -308,16 +323,20 @@
             $(window).on("resize." + pluginName, self.onResizeEvent);
 
             // Attach resize end handler, and call it once
-            self.$map.on("resizeEnd." + pluginName, function () {
+            self.$map.on("resizeEnd." + pluginName, function (e, isInit) {
                 var containerWidth = self.$map.width();
+
                 if (self.paper.width != containerWidth) {
                     var newScale = containerWidth / self.mapConf.width;
                     // Set new size
                     self.paper.setSize(containerWidth, self.mapConf.height * newScale);
+
                     // Create plots legend again to take into account the new scale
-                    self.createLegends("plot", self.plots, newScale);
+                    if (isInit || self.options.legend.redrawOnResize) {
+                        self.createLegends("plot", self.plots, newScale);
+                    }
                 }
-            }).trigger("resizeEnd." + pluginName);
+            }).trigger("resizeEnd", [true]);
         },
 
         /*
@@ -331,7 +350,7 @@
             options = $.extend(true, {}, Mapael.prototype.defaultOptions, options);
 
             // Extend legend default options
-            $.each(options.legend, function (type) {
+            $.each(['area', 'plot'], function (key, type) {
                 if ($.isArray(options.legend[type])) {
                     for (var i = 0; i < options.legend[type].length; ++i)
                         options.legend[type][i] = $.extend(true, {}, Mapael.prototype.legendDefaultOptions[type], options.legend[type][i]);
@@ -406,6 +425,10 @@
                 }
             }
 
+            if (elemOptions.cssClass !== undefined) {
+                $(elem.mapElem.node).addClass(elemOptions.cssClass);
+            }
+
             $(elem.mapElem.node).attr("data-id", id);
         },
 
@@ -422,13 +445,13 @@
             var previousY = 0;
             var fnZoomButtons = {
                 "reset": function () {
-                    self.$container.trigger("zoom." + pluginName, {"level": 0});
+                    self.$container.trigger("zoom", {"level": 0});
                 },
                 "in": function () {
-                    self.$container.trigger("zoom." + pluginName, {"level": "+1"});
+                    self.$container.trigger("zoom", {"level": "+1"});
                 },
                 "out": function () {
-                    self.$container.trigger("zoom." + pluginName, {"level": -1});
+                    self.$container.trigger("zoom", {"level": -1});
                 }
             };
 
@@ -444,8 +467,8 @@
                 if (fnZoomButtons[type] === undefined) throw new Error("Unknown zoom button '" + type + "'");
                 // Create div with classes, contents and title (for tooltip)
                 var $button = $("<div>").addClass(opt.cssClass)
-                                    .html(opt.content)
-                                    .attr("title", opt.title);
+                    .html(opt.content)
+                    .attr("title", opt.title);
                 // Assign click event
                 $button.on("click." + pluginName, fnZoomButtons[type]);
                 // Append to map
@@ -458,14 +481,14 @@
                     var zoomLevel = (e.deltaY > 0) ? 1 : -1;
                     var coord = self.mapPagePositionToXY(e.pageX, e.pageY);
 
-                    self.$container.trigger("zoom." + pluginName, {
+                    self.$container.trigger("zoom", {
                         "fixedCenter": true,
                         "level": self.zoomData.zoomLevel + zoomLevel,
                         "x": coord.x,
                         "y": coord.y
                     });
 
-                    return false;
+                    e.preventDefault();
                 });
             }
 
@@ -489,7 +512,7 @@
                         if (Math.abs(pinchDist - self.previousPinchDist) > 15) {
                             var coord = self.mapPagePositionToXY(self.zoomCenterX, self.zoomCenterY);
                             zoomLevel = (pinchDist - self.previousPinchDist) / Math.abs(pinchDist - self.previousPinchDist);
-                            self.$container.trigger("zoom." + pluginName, {
+                            self.$container.trigger("zoom", {
                                 "fixedCenter": true,
                                 "level": self.zoomData.zoomLevel + zoomLevel,
                                 "x": coord.x,
@@ -502,15 +525,20 @@
                 });
             }
 
+            // When the user drag the map, prevent to move the clicked element instead of dragging the map (behaviour seen with Firefox)
+            self.$map.on("dragstart", function() {
+                return false;
+            });
+
             // Panning
-            $("body").on("mouseup." + pluginName + (zoomOptions.touch ? " touchend" : ""), function () {
+            $("body").on("mouseup." + pluginName + (zoomOptions.touch ? " touchend." + pluginName : ""), function () {
                 mousedown = false;
                 setTimeout(function () {
                     self.panning = false;
                 }, 50);
             });
 
-            self.$map.on("mousedown." + pluginName + (zoomOptions.touch ? " touchstart" : ""), function (e) {
+            self.$map.on("mousedown." + pluginName + (zoomOptions.touch ? " touchstart." + pluginName : ""), function (e) {
                 if (e.pageX !== undefined) {
                     mousedown = true;
                     previousX = e.pageX;
@@ -522,7 +550,7 @@
                         previousY = e.originalEvent.touches[0].pageY;
                     }
                 }
-            }).on("mousemove." + pluginName + (zoomOptions.touch ? " touchmove" : ""), function (e) {
+            }).on("mousemove." + pluginName + (zoomOptions.touch ? " touchmove." + pluginName : ""), function (e) {
                 var currentLevel = self.zoomData.zoomLevel;
                 var pageX = 0;
                 var pageY = 0;
@@ -645,7 +673,7 @@
                 // Make sure we stay in the boundaries
                 newLevel = Math.min(Math.max(newLevel, self.options.map.zoom.minLevel), self.options.map.zoom.maxLevel);
             }
-            
+
             zoomLevel = (1 + newLevel * self.options.map.zoom.step);
 
             if (zoomOptions.latitude !== undefined && zoomOptions.longitude !== undefined) {
@@ -852,7 +880,7 @@
                 if (elem.textElem) {
                     // Set attribute
                     elem.textElem.attr({"opacity": opacity});
-                // For null opacity, hide it
+                    // For null opacity, hide it
                     if (opacity === 0) elem.textElem.hide();
                 }
             }
@@ -926,7 +954,7 @@
                     $("[data-type='elem']", self.$container).each(function (id, elem) {
                         if ($(elem).attr('data-hidden') === "1") {
                             // Toggle state of element by clicking
-                            $(elem).trigger("click." + pluginName, [false, animDuration]);
+                            $(elem).trigger("click", [false, animDuration]);
                         }
                     });
                 }
@@ -1007,7 +1035,6 @@
                         (self.options.areas[id] ? self.options.areas[id] : {}),
                         self.options.legend.area
                     );
-
                     self.updateElem(elemOptions, self.areas[id], animDuration);
                 }
             });
@@ -1072,14 +1099,14 @@
 
             // Update legends
             if (opt.mapOptions && (
-                (typeof opt.mapOptions.legend === "object")
-                || (typeof opt.mapOptions.map === "object" && typeof opt.mapOptions.map.defaultArea === "object")
-                || (typeof opt.mapOptions.map === "object" && typeof opt.mapOptions.map.defaultPlot === "object")
-            )) {
+                    (typeof opt.mapOptions.legend === "object")
+                    || (typeof opt.mapOptions.map === "object" && typeof opt.mapOptions.map.defaultArea === "object")
+                    || (typeof opt.mapOptions.map === "object" && typeof opt.mapOptions.map.defaultPlot === "object")
+                )) {
                 // Show all elements on the map before updating the legends
                 $("[data-type='elem']", self.$container).each(function (id, elem) {
                     if ($(elem).attr('data-hidden') === "1") {
-                        $(elem).trigger("click." + pluginName, [false, animDuration]);
+                        $(elem).trigger("click", [false, animDuration]);
                     }
                 });
 
@@ -1106,7 +1133,7 @@
                             if (($(elem).attr('data-hidden') === "0" && action === "hide") ||
                                 ($(elem).attr('data-hidden') === "1" && action === "show")) {
                                 // Toggle state of element by clicking
-                                $(elem).trigger("click." + pluginName, [false, animDuration]);
+                                $(elem).trigger("click", [false, animDuration]);
                             }
                         });
                     }
@@ -1120,7 +1147,7 @@
                     if (($(elem).attr('data-hidden') === "0" && action === "hide") ||
                         ($(elem).attr('data-hidden') === "1" && action === "show")) {
                         // Toggle state of element by clicking
-                        $(elem).trigger("click." + pluginName, [false, animDuration]);
+                        $(elem).trigger("click", [false, animDuration]);
                     }
                 });
             }
@@ -1218,11 +1245,23 @@
         },
 
         /*
+         * Check wether newAttrs object bring modifications to originalAttrs object
+         */
+        isAttrsChanged: function(originalAttrs, newAttrs) {
+            for (var key in newAttrs) {
+                if (typeof originalAttrs[key] === 'undefined' || newAttrs[key] !== originalAttrs[key]) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        /*
          * Update the element "elem" on the map with the new elemOptions options
          */
         updateElem: function (elemOptions, elem, animDuration) {
             var self = this;
-            var bbox = elem.mapElem.getBBox();
+            var bbox;
             var textPosition;
             var plotOffsetX;
             var plotOffsetY;
@@ -1230,10 +1269,16 @@
             if (elemOptions.value !== undefined)
                 elem.value = elemOptions.value;
 
+            if (elemOptions.toFront === true) {
+                elem.mapElem.toFront();
+            }
+
             // Update the label
             if (elem.textElem) {
                 if (elemOptions.text !== undefined && elemOptions.text.content !== undefined && elemOptions.text.content != elem.textElem.attrs.text)
                     elem.textElem.attr({text: elemOptions.text.content});
+
+                bbox = elem.mapElem.getBBox();
 
                 if (elemOptions.size || (elemOptions.width && elemOptions.height)) {
                     if (elemOptions.type == "image" || elemOptions.type == "svg") {
@@ -1271,13 +1316,20 @@
 
             // Update elements attrs and attrsHover
             self.setHoverOptions(elem.mapElem, elemOptions.attrs, elemOptions.attrsHover);
-            if (animDuration > 0)
-                elem.mapElem.animate(elemOptions.attrs, animDuration);
-            else
-                elem.mapElem.attr(elemOptions.attrs);
+
+            if (self.isAttrsChanged(elem.mapElem.attrs, elemOptions.attrs)) {
+                if (animDuration > 0)
+                    elem.mapElem.animate(elemOptions.attrs, animDuration);
+                else
+                    elem.mapElem.attr(elemOptions.attrs);
+            }
 
             // Update dimensions of SVG plots
             if (elemOptions.type == "svg") {
+
+                if (bbox === undefined) {
+                    bbox = elem.mapElem.getBBox();
+                }
                 elem.mapElem.transform("m" + (elemOptions.width / elem.mapElem.originalWidth) + ",0,0," + (elemOptions.height / elem.mapElem.originalHeight) + "," + bbox.x + "," + bbox.y);
             }
 
@@ -1321,6 +1373,13 @@
 
             if (elemOptions.x !== undefined && elemOptions.y !== undefined)
                 coords = {x: elemOptions.x, y: elemOptions.y};
+            else if (elemOptions.plotsOn !== undefined && self.areas[elemOptions.plotsOn].mapElem !== undefined){
+                var path = self.areas[elemOptions.plotsOn].mapElem;
+                var bbox = path.getBBox();
+                var _x = Math.floor(bbox.x + bbox.width/2.0);
+                var _y = Math.floor(bbox.y + bbox.height/2.0);
+                coords = {x: _x, y: _y};
+            }
             else
                 coords = self.mapConf.getCoords(elemOptions.latitude, elemOptions.longitude);
 
@@ -1383,17 +1442,33 @@
             var self = this;
             var tooltipTO = 0;
             var cssClass = self.$tooltip.attr('class');
+
+
+
             var updateTooltipPosition = function (x, y) {
+
+                var offsetLeft = 10;
+                var offsetTop = 20;
+
+                if (typeof elem.tooltip.offset === "object") {
+                    if (typeof elem.tooltip.offset.left !== "undefined") {
+                        offsetLeft = elem.tooltip.offset.left;
+                    }
+                    if (typeof elem.tooltip.offset.top !== "undefined") {
+                        offsetTop = elem.tooltip.offset.top;
+                    }
+                }
+
                 var tooltipPosition = {
-                    "left": Math.min(self.$map.width() - self.$tooltip.outerWidth() - 5, x - self.$map.offset().left + 10),
-                    "top": Math.min(self.$map.height() - self.$tooltip.outerHeight() - 5, y - self.$map.offset().top + 20)
+                    "left": Math.min(self.$map.width() - self.$tooltip.outerWidth() - 5, x - self.$map.offset().left + offsetLeft),
+                    "top": Math.min(self.$map.height() - self.$tooltip.outerHeight() - 5, y - self.$map.offset().top + offsetTop)
                 };
 
-                if (elem.tooltip.overflow !== undefined) {
-                    if (elem.tooltip.overflow.right !== undefined && elem.tooltip.overflow.right === true) {
+                if (typeof elem.tooltip.overflow === "object") {
+                    if (elem.tooltip.overflow.right === true) {
                         tooltipPosition.left = x - self.$map.offset().left + 10;
                     }
-                    if (elem.tooltip.overflow.bottom !== undefined && elem.tooltip.overflow.bottom === true) {
+                    if (selem.tooltip.overflow.bottom === true) {
                         tooltipPosition.top = y - self.$map.offset().top + 20;
                     }
                 }
@@ -1473,7 +1548,17 @@
             var sliceOptions = [];
             var length = 0;
 
-            $legend = $("." + legendOptions.cssClass, self.$container).empty();
+            $legend = $("." + legendOptions.cssClass, self.$container);
+
+            if (typeof self.createdLegends[legendOptions.cssClass] ==='undefined') {
+                self.createdLegends[legendOptions.cssClass] = {
+                    container: $legend,
+                    initialHTMLContent: $legend.html()
+                };
+            }
+
+            $legend.empty();
+
             legendPaper = new Raphael($legend.get(0));
             // Set some data to object
             $(legendPaper.canvas).attr({"data-type": legendType, "data-index": legendIndex});
@@ -1490,7 +1575,7 @@
             }
 
             // Calculate attrs (and width, height and r (radius)) for legend elements, and yCenter for horizontal legends
-            
+
             for (i = 0, length = legendOptions.slices.length; i < length; ++i) {
                 var yCenterCurrent = 0;
 
@@ -1500,7 +1585,7 @@
                     legendOptions.slices[i].legendSpecificAttrs = {};
                 }
 
-                 $.extend(true, sliceOptions[i].attrs, legendOptions.slices[i].legendSpecificAttrs);
+                $.extend(true, sliceOptions[i].attrs, legendOptions.slices[i].legendSpecificAttrs);
 
                 if (legendType == "area") {
                     if (sliceOptions[i].attrs.width === undefined)
@@ -1521,8 +1606,6 @@
                     if (sliceOptions[i].attrs.r === undefined)
                         sliceOptions[i].attrs.r = sliceOptions[i].size / 2;
                 }
-
-                
 
                 // Compute yCenter for this legend slice
                 yCenterCurrent = legendOptions.marginBottomTitle;
@@ -1645,7 +1728,7 @@
                         self.setHoverOptions(elem, sliceOptions[i].attrs, sliceOptions[i].attrs);
                         self.setHoverOptions(label, legendOptions.labelAttrs, legendOptions.labelAttrsHover);
                         self.setHover(elem, label);
-                        self.handleClickOnLegendElem(legendOptions, sliceOptions[i], label, elem, elems, legendIndex);
+                        self.handleClickOnLegendElem(legendOptions, legendOptions.slices[i], label, elem, elems, legendIndex);
                     }
                 }
             }
@@ -1669,6 +1752,14 @@
          */
         handleClickOnLegendElem: function (legendOptions, sliceOptions, label, elem, elems, legendIndex) {
             var self = this;
+
+            /**
+             *
+             * @param e
+             * @param hideOtherElems : option used for the 'exclusive' mode to enabled only one item from the legend
+             * at once
+             * @param animDuration : used in the 'update' event in order to apply the same animDuration on the legend items
+             */
             var hideMapElems = function (e, hideOtherElems, animDuration) {
                 var elemValue = 0;
                 var hidden = $(label.node).attr('data-hidden');
@@ -1698,11 +1789,8 @@
                         elemValue = elems[id].value;
                     }
 
-                    if ((sliceOptions.sliceValue !== undefined && elemValue == sliceOptions.sliceValue)
-                        || ((sliceOptions.sliceValue === undefined)
-                        && (sliceOptions.min === undefined || elemValue >= sliceOptions.min)
-                        && (sliceOptions.max === undefined || elemValue <= sliceOptions.max))
-                    ) {
+                    // Hide elements whose value matches with the slice of the clicked legend item
+                    if (self.getLegendSlice(elemValue, legendOptions) === sliceOptions) {
                         (function (id) {
                             if (hidden === '0') { // we want to hide this element
                                 hiddenBy[legendIndex] = true; // add legendIndex to the data object for later use
@@ -1733,7 +1821,7 @@
                 ) {
                     $("[data-type='elem'][data-hidden=0]", self.$container).each(function () {
                         if ($(this).attr('data-index') !== $(elem.node).attr('data-index')) {
-                            $(this).trigger("click." + pluginName, false);
+                            $(this).trigger("click", false);
                         }
                     });
                 }
@@ -1742,7 +1830,7 @@
             $(elem.node).on("click." + pluginName, hideMapElems);
 
             if (sliceOptions.clicked !== undefined && sliceOptions.clicked === true) {
-                $(elem.node).trigger("click." + pluginName, false);
+                $(elem.node).trigger("click", false);
             }
         },
 
@@ -1806,7 +1894,7 @@
             var outBehaviour = function () {
                 clearTimeout(mouseoverTimeout);
                 mouseoutTimeout = setTimeout(function(){
-                    self.elemOut(mapElem, textElem);                
+                    self.elemOut(mapElem, textElem);
                 }, 120);
             };
 
@@ -1962,7 +2050,7 @@
 
         /*
          * Animated view box changes
-         * As from https://code.voidblossom.com/animating-viewbox-easing-formulas/,
+         * As from http://code.voidblossom.com/animating-viewbox-easing-formulas/,
          * (from https://github.com/theshaun works on mapael)
          * @param x coordinate of the point to focus on
          * @param y coordinate of the point to focus on
@@ -2010,13 +2098,13 @@
         },
 
         /*
-          * Check for Raphael bug regarding drawing while beeing hidden (under display:none)
-          * See https://github.com/neveldo/jQuery-Mapael/issues/135
-          * @return true/false
-          *
-          * Wants to override this behavior? Use prototype overriding:
-          *     $.mapael.prototype.isRaphaelBBoxBugPresent = function() {return false;};
-          */
+         * Check for Raphael bug regarding drawing while beeing hidden (under display:none)
+         * See https://github.com/neveldo/jQuery-Mapael/issues/135
+         * @return true/false
+         *
+         * Wants to override this behavior? Use prototype overriding:
+         *     $.mapael.prototype.isRaphaelBBoxBugPresent = function() {return false;};
+         */
         isRaphaelBBoxBugPresent: function(){
             var self = this;
             // Draw text, then get its boundaries
@@ -2058,7 +2146,8 @@
                             "animDuration": 300
                         }
                     },
-                    target: "_self"
+                    target: "_self",
+                    cssClass: "area"
                 },
                 defaultPlot: {
                     type: "circle",
@@ -2085,7 +2174,8 @@
                             animDuration: 300
                         }
                     },
-                    target: "_self"
+                    target: "_self",
+                    cssClass: "plot"
                 },
                 defaultLink: {
                     factor: 0.5,
@@ -2108,7 +2198,8 @@
                             animDuration: 300
                         }
                     },
-                    target: "_self"
+                    target: "_self",
+                    cssClass: "link"
                 },
                 zoom: {
                     enabled: false,
@@ -2139,6 +2230,7 @@
                 }
             },
             legend: {
+                redrawOnResize: true,
                 area: [],
                 plot: []
             },
@@ -2229,5 +2321,7 @@
             $.data(this, pluginName, new Mapael(this, options));
         });
     };
+
+    return Mapael;
 
 }));

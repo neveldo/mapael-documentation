@@ -5,12 +5,12 @@
  *
  * Map of USA by state
  * 
- * @source https://the55.net/_11/sketch/us_map
+ * @source http://the55.net/_11/sketch/us_map
  */
 (function (factory) {
     if (typeof exports === 'object') {
         // CommonJS
-        module.exports = factory(require('jquery'), require('mapael'));
+        module.exports = factory(require('jquery'), require('jquery-mapael'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['jquery', 'mapael'], factory);
