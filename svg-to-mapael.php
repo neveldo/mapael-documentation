@@ -38,7 +38,7 @@ $template = <<<EOD
                     height : %height%,
                     getCoords : function (lat, lon) {
                         // todo
-                        return {"x" : long, "y" : lat};
+                        return {"x" : lon, "y" : lat};
                     },
                     'elems': {
 %areas%
