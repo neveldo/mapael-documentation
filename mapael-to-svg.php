@@ -1,5 +1,9 @@
 <?php
 
+// increase default PHP backtrack_limit to handle very big SVG files
+// @see http://php.net/manual/en/pcre.configuration.php
+ini_set('pcre.backtrack_limit', 10000000);
+
 /**
  * Tool that allows users to generate a SVG file from a mapael JS map
  */
