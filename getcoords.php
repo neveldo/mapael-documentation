@@ -7,12 +7,12 @@
 // Template of the getCoords() function
 $template = <<<EOD
                     getCoords : function (lat, lon) {
-                            var xfactor = %xfactor%
-                                , xoffset = %xoffset%
-                                , x = (lon * xfactor) + xoffset
-                                , yfactor = %yfactor%
-                                , yoffset = %yoffset%
-                                , y = (lat * yfactor) + yoffset;
+                        var xfactor = %xfactor%;
+                        var xoffset = %xoffset%;
+                        var x = (lon * xfactor) + xoffset;
+                        var yfactor = %yfactor%;
+                        var yoffset = %yoffset%;
+                        var y = (lat * yfactor) + yoffset;
                             
                         return {'x' : x, 'y' : y};
                     },
