@@ -209,6 +209,11 @@
 
         <!-- Preview pannel -->
           <div class="col-sm-6">
+            <div class="mapExtraInfo">
+                Hovered area ID : <span class="area">-</span>
+                <br />pageX : <span class="pageX">0</span>. pageY : <span class="pageY">0</span>. X : <span class="x">0</span>. Y : <span class="y">0</span>
+                [<label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" name="spotPoint" />]
+            </div>
 
             <div class="mapcontainer">
                 <div class="map">
@@ -217,10 +222,10 @@
                 <div class="areaLegend"></div>
                 <div class="plotLegend"></div>
             </div>
-            <div id="mapExtraInfo">
-	            Hovered area ID : <span id="area">-</span>
-	            <br />pageX : <span id="pageX">0</span>. pageY : <span id="pageY">0</span>. X : <span id="x">0</span>. Y : <span id="y">0</span>
-	            [<label for="spotPoint">Spot a point on click</label> <input type="checkbox" id="spotPoint" name="spotPoint" />]
+
+            <div class="mapExtraInfo">
+                Hovered area ID : <span class="area">-</span>
+                <br />pageX : <span class="pageX">0</span>. pageY : <span class="pageY">0</span>. X : <span class="x">0</span>. Y : <span class="y">0</span>
             </div>
         </div>
 
@@ -394,10 +399,10 @@
                     'defaultArea' : {
                         'eventHandlers' : {
                             'mouseenter' : function(e, id, mapElem, textElem) {
-                                $('#mapExtraInfo #area').text('"' + id + '"');
+                                $('.mapExtraInfo .area').text('"' + id + '"');
                             },
                             'mouseleave' : function(e, id, mapElem, textElem) {
-                                $('#mapExtraInfo #area').text('-');
+                                $('.mapExtraInfo .area').text('-');
                             },
                         }
                     }
@@ -656,58 +661,58 @@
         * some position by clicking on the map
         *
         */
-        var currentCross = [];
+        var currentReticle = [];
         var initMapExtraInfo = function() {
-	        // 
-	        $(".mapcontainer")
-	            .on('mousemove', function(e) {
+            // 
+            $(".mapcontainer")
+                .on('mousemove', function(e) {
 
-	                if($('#spotPoint').is(":checked")) return;
+                    if($('.spotPoint').is(":checked")) return;
 
-	                var $this = $(this);
+                    var $this = $(this);
 
-	                // mapPagePositionToXY() allows to get the x,y coordinates 
-	                // on the map from a x,y coordinates on the page
-	                var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+                    // mapPagePositionToXY() allows to get the x,y coordinates 
+                    // on the map from a x,y coordinates on the page
+                    var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
 
-	                $('#mapExtraInfo #pageX').text(e.pageX);
-	                $('#mapExtraInfo #pageY').text(e.pageY);
-	                $('#mapExtraInfo #x').text(Math.round(1000 * coords.x) / 1000);
-	                $('#mapExtraInfo #y').text(Math.round(1000 * coords.y) / 1000);
-	            })
-	            .on('click', function(e) {
-	                if (!$('#spotPoint').is(":checked")) return;
+                    $('.mapExtraInfo .pageX').text(e.pageX);
+                    $('.mapExtraInfo .pageY').text(e.pageY);
+                    $('.mapExtraInfo .x').text(Math.round(1000 * coords.x) / 1000);
+                    $('.mapExtraInfo .y').text(Math.round(1000 * coords.y) / 1000);
+                })
+                .on('click', function(e) {
+                    if (!$('.spotPoint').is(":checked")) return;
 
-	                var $this = $(this);
-	                var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
-			        var paper = $(".mapcontainer").data("mapael").paper;
+                    var $this = $(this);
+                    var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+                    var paper = $(".mapcontainer").data("mapael").paper;
 
-	                $('#mapExtraInfo #pageX').text(e.pageX);
-	                $('#mapExtraInfo #pageY').text(e.pageY);
-	                $('#mapExtraInfo #x').text(Math.round(1000 * coords.x) / 1000);
-	                $('#mapExtraInfo #y').text(Math.round(1000 * coords.y) / 1000);
+                    $('.mapExtraInfo .pageX').text(e.pageX);
+                    $('.mapExtraInfo .pageY').text(e.pageY);
+                    $('.mapExtraInfo .x').text(Math.round(1000 * coords.x) / 1000);
+                    $('.mapExtraInfo .y').text(Math.round(1000 * coords.y) / 1000);
 
-	                for (var i = 0; i < currentCross.length; i++) {
-	                	currentCross[i].remove();
-	                }
+                    for (var i = 0; i < currentReticle.length; i++) {
+                        currentReticle[i].remove();
+                    }
 
-			        currentCross = [
-			        	paper.path("M" + (coords.x - 50) + "," +  coords.y + " " + (coords.x + 50) + "," +  coords.y + "")
-			        		.attr({'stroke':'red', 'stroke-width':0.5}),
-			        	paper.path("M" + coords.x + "," +  (coords.y - 50) + " " + coords.x + "," +  (coords.y + 50) + "")
-			        		.attr({'stroke':'red', 'stroke-width':0.5})
-			        ];
-	            });
+                    currentReticle = [
+                        paper.path("M" + (coords.x - 50) + "," +  coords.y + " " + (coords.x + 50) + "," +  coords.y + "")
+                            .attr({'stroke':'red', 'stroke-width':0.5}),
+                        paper.path("M" + coords.x + "," +  (coords.y - 50) + " " + coords.x + "," +  (coords.y + 50) + "")
+                            .attr({'stroke':'red', 'stroke-width':0.5})
+                    ];
+                });
 
-	        $('#spotPoint').on('click', function() {
-	        	var $this = $(this);
+            $('.spotPoint').on('click', function() {
+                var $this = $(this);
 
-	        	if (!$this.is(":checked")) {
-	                for (var i = 0; i < currentCross.length; i++) {
-	                	currentCross[i].remove();
-	                }
-	        	}
-	        });
+                if (!$this.is(":checked")) {
+                    for (var i = 0; i < currentReticle.length; i++) {
+                        currentReticle[i].remove();
+                    }
+                }
+            });
         }
 
         // Current loaded map
