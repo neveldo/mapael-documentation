@@ -202,7 +202,7 @@
             <div class="mapExtraInfo">
                 Hovered area ID : <span class="area">-</span>
                 <br />pageX : <span class="pageX">0</span>, pageY : <span class="pageY">0</span> - X : <span class="x">0</span>, Y : <span class="y">0</span>
-                <br /><label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" name="spotPoint" />
+                <br /><label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" id="spotPoint" name="spotPoint" />
             </div>
         </div>
     </div>
@@ -490,6 +490,10 @@
                     selected: (maps[mapName].selected === true)
                 }));
             }
+
+            $('label[for="mapSelector"]').on('click', function() {
+                $mapSelector.select2('open');
+            });
 
             $mapSelector
                 .select2()
