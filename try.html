@@ -16,9 +16,6 @@
             margin: auto;
             width:100%;
         }
-        .mapcontainer {
-            margin-top: 20px;
-        }
         .mapael .map {
             background-color: #cddee0;
             margin-bottom: 10px;
@@ -73,10 +70,20 @@
     </style>
 
     <style type="text/css">
+
+        body {
+            padding-bottom:0;
+        }
+
+        .mapcontainer {
+            height:70vh;
+            border:1px solid #ccc;
+            overflow-y:auto;
+        }
+
         #configuration { 
             width:100%;
-            height:calc(100vh - 350px);
-            border:1px solid #000;
+            height:70vh;
         }
         /* @source : https://projects.lukehaas.me/css-loaders/ */
         .loader,
@@ -156,35 +163,56 @@
 <div class="container">
     <h2 style="margin-bottom:10px;text-align:center;">Try jQuery Mapael online</h2>
 
+
+    <div class="row">
+
+        <!-- Map url / file / CSV pannel -->
+        <div class="col-sm-6">
+
+            <div class="form-group">
+
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label for="mapSelector">Map</label>
+                        <select class="form-control" id="mapSelector" name="mapSelector"></select>
+
+                        <p style="text-align:right;">
+                            
+                        </p>
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label for="mapUrl">Or paste map URL</label>
+                        <input class="form-control" type="text" id="mapUrl" name="mapUrl" placeholder="https://..." />
+                    </div>
+                    <div class="col-sm-4" class="form-group" id="uploadCsv">
+                        <label for="file">Plots or areas CSV data (optional)</label>
+                        <input id="file" type="file" style="display:inline;" />
+                    </div>
+
+                </div>
+                <p>You map is not available ? <b><a href="https://github.com/neveldo/mapael-maps">Contribute !</a></b></p>
+
+            </div>
+
+        </div>
+
+        <!-- Map extra info pannel -->
+        <div class="col-sm-6">
+            <div class="mapExtraInfo">
+                Hovered area ID : <span class="area">-</span>
+                <br />pageX : <span class="pageX">0</span>, pageY : <span class="pageY">0</span> - X : <span class="x">0</span>, Y : <span class="y">0</span>
+                <br /><label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" name="spotPoint" />
+            </div>
+        </div>
+    </div>
+
     <div class="row">
 
         <!-- Configuration pannel -->
         <div class="col-sm-6">
 
             <div class="form-group">
-
-                <div class="row">
-                    <div class="col-sm-6">
-                        <label for="mapSelector">Map</label>
-                        <select class="form-control" id="mapSelector" name="mapSelector"></select>
-
-                        <p style="text-align:right;">
-                            You map is not available ? <b><a href="https://github.com/neveldo/mapael-maps">Contribute !</a></b>
-                        </p>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label for="mapUrl">Or paste map URL</label>
-                        <input class="form-control" type="text" id="mapUrl" name="mapUrl" placeholder="https://..." />
-                    </div>
-                </div>
-
-                <div class="form-group" id="uploadCsv">
-                    <label for="file">Plots or areas CSV data (optional)</label>
-                    <input id="file" type="file" style="display:inline;" />
-                </div>
-
-                <label for="configuration">Map configuration</label>
                 <div style="position:relative;">
                     <div class="loader"></div>
                     <div id="configuration"></div>
@@ -209,23 +237,12 @@
 
         <!-- Preview pannel -->
           <div class="col-sm-6">
-            <div class="mapExtraInfo">
-                Hovered area ID : <span class="area">-</span>
-                <br />pageX : <span class="pageX">0</span>. pageY : <span class="pageY">0</span>. X : <span class="x">0</span>. Y : <span class="y">0</span>
-                [<label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" name="spotPoint" />]
-            </div>
-
             <div class="mapcontainer">
                 <div class="map">
                     <span>Alternative content for the map</span>
                 </div>
                 <div class="areaLegend"></div>
                 <div class="plotLegend"></div>
-            </div>
-
-            <div class="mapExtraInfo">
-                Hovered area ID : <span class="area">-</span>
-                <br />pageX : <span class="pageX">0</span>. pageY : <span class="pageY">0</span>. X : <span class="x">0</span>. Y : <span class="y">0</span>
             </div>
         </div>
 
@@ -587,15 +604,15 @@
                       continue;
                 }
 
-            var obj = {};
-            var currentline = lines[i].split(sep);
+                var obj = {};
+                var currentline = lines[i].split(sep);
 
-            for(var j = 0; j < headers.length; j++) {
-                if (typeof currentline[j] === 'undefined') continue;
-                obj[headers[j]] = currentline[j].replace(/^['"]?|['"]?$/g, '');
-            }
+                for(var j = 0; j < headers.length; j++) {
+                    if (typeof currentline[j] === 'undefined') continue;
+                    obj[headers[j]] = currentline[j].replace(/^['"]?|['"]?$/g, '');
+                }
 
-            result.push(obj);
+                result.push(obj);
             }
 
             return result;
@@ -697,9 +714,9 @@
                     }
 
                     currentReticle = [
-                        paper.path("M" + (coords.x - 50) + "," +  coords.y + " " + (coords.x + 50) + "," +  coords.y + "")
+                        paper.path("M" + (coords.x - 25) + "," +  coords.y + " " + (coords.x + 25) + "," +  coords.y + "")
                             .attr({'stroke':'red', 'stroke-width':0.5}),
-                        paper.path("M" + coords.x + "," +  (coords.y - 50) + " " + coords.x + "," +  (coords.y + 50) + "")
+                        paper.path("M" + coords.x + "," +  (coords.y - 25) + " " + coords.x + "," +  (coords.y + 25) + "")
                             .attr({'stroke':'red', 'stroke-width':0.5})
                     ];
                 });
