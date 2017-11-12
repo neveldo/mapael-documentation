@@ -217,7 +217,11 @@
                 <div class="areaLegend"></div>
                 <div class="plotLegend"></div>
             </div>
-            <div id="mapExtraInfo">pageX : <span id="pageX">0</span>. pageY : <span id="pageY">0</span>. X : <span id="x">0</span>. Y : <span id="y">0</span>. Hovered area ID : <span id="area">-</span> (click on the map to fix the values)</div>
+            <div id="mapExtraInfo">
+	            Hovered area ID : <span id="area">-</span>
+	            <br />pageX : <span id="pageX">0</span>. pageY : <span id="pageY">0</span>. X : <span id="x">0</span>. Y : <span id="y">0</span>
+	            [<label for="spotPoint">Spot a point on click</label> <input type="checkbox" id="spotPoint" name="spotPoint" />]
+            </div>
         </div>
 
     </div>
@@ -375,8 +379,6 @@
             }
         };
 
-        var fixedExtraInfo = false;
-
         /*
         * Get JSON map configuration from string
         * Use eval() in oder to allow comments and get rid from the strict syntax of JSON
@@ -392,11 +394,9 @@
                     'defaultArea' : {
                         'eventHandlers' : {
                             'mouseenter' : function(e, id, mapElem, textElem) {
-                                if (fixedExtraInfo) return;
                                 $('#mapExtraInfo #area').text('"' + id + '"');
                             },
                             'mouseleave' : function(e, id, mapElem, textElem) {
-                                if (fixedExtraInfo) return;
                                 $('#mapExtraInfo #area').text('-');
                             },
                         }
@@ -651,6 +651,65 @@
             });
         }
 
+        /**
+        * Display map extra info and allow user to spot
+        * some position by clicking on the map
+        *
+        */
+        var currentCross = [];
+        var initMapExtraInfo = function() {
+	        // 
+	        $(".mapcontainer")
+	            .on('mousemove', function(e) {
+
+	                if($('#spotPoint').is(":checked")) return;
+
+	                var $this = $(this);
+
+	                // mapPagePositionToXY() allows to get the x,y coordinates 
+	                // on the map from a x,y coordinates on the page
+	                var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+
+	                $('#mapExtraInfo #pageX').text(e.pageX);
+	                $('#mapExtraInfo #pageY').text(e.pageY);
+	                $('#mapExtraInfo #x').text(Math.round(1000 * coords.x) / 1000);
+	                $('#mapExtraInfo #y').text(Math.round(1000 * coords.y) / 1000);
+	            })
+	            .on('click', function(e) {
+	                if (!$('#spotPoint').is(":checked")) return;
+
+	                var $this = $(this);
+	                var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+			        var paper = $(".mapcontainer").data("mapael").paper;
+
+	                $('#mapExtraInfo #pageX').text(e.pageX);
+	                $('#mapExtraInfo #pageY').text(e.pageY);
+	                $('#mapExtraInfo #x').text(Math.round(1000 * coords.x) / 1000);
+	                $('#mapExtraInfo #y').text(Math.round(1000 * coords.y) / 1000);
+
+	                for (var i = 0; i < currentCross.length; i++) {
+	                	currentCross[i].remove();
+	                }
+
+			        currentCross = [
+			        	paper.path("M" + (coords.x - 50) + "," +  coords.y + " " + (coords.x + 50) + "," +  coords.y + "")
+			        		.attr({'stroke':'red', 'stroke-width':0.5}),
+			        	paper.path("M" + coords.x + "," +  (coords.y - 50) + " " + coords.x + "," +  (coords.y + 50) + "")
+			        		.attr({'stroke':'red', 'stroke-width':0.5})
+			        ];
+	            });
+
+	        $('#spotPoint').on('click', function() {
+	        	var $this = $(this);
+
+	        	if (!$this.is(":checked")) {
+	                for (var i = 0; i < currentCross.length; i++) {
+	                	currentCross[i].remove();
+	                }
+	        	}
+	        });
+        }
+
         // Current loaded map
         var loadedMapUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js';
 
@@ -669,28 +728,9 @@
             getMapConfigFromString($('#defaultConfiguration').html())
         );
 
-        // Display map extra info
-        $(".mapcontainer")
-            .on('mousemove', function(e) {
-
-                if (fixedExtraInfo) return;
-
-                var $this = $(this),
-
-                    // mapPagePositionToXY() allows to get the x,y coordinates 
-                    // on the map from a x,y coordinates on the page
-                    coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
-
-                    $('#mapExtraInfo #pageX').text(e.pageX);
-                    $('#mapExtraInfo #pageY').text(e.pageY);
-                    $('#mapExtraInfo #x').text(Math.round(1000 * coords.x) / 1000);
-                    $('#mapExtraInfo #y').text(Math.round(1000 * coords.y) / 1000);
-            })
-            .on('click', function(e) {
-                    fixedExtraInfo = !fixedExtraInfo;
-            });
-
         initLoadCSVFile();
+
+        initMapExtraInfo();
 
         $('#uploadCsv').tooltip({
             "html":true,
