@@ -561,7 +561,7 @@
 
             $('#saveMap').on('click', function() {
 
-                var javascript = '<script type="text/javascript">' + $(".mapcontainer").mapael(' + editor.getValue() + ') + '</script>';
+                var javascript = '<script type="text/javascript">\n' + '$(".mapcontainer").mapael(' + editor.getValue() + ')' + '\n</scr' + 'ipt>';
 
                 var body = $('#htmlExportTemplate').html()
                     .replace('[mapFile]', loadedMapUrl)
