@@ -286,6 +286,7 @@
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js" charset="utf-8"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/jquery.mapael.min.js" charset="utf-8"></script>
         <script type="text/javascript" src="[mapFile]" charset="utf-8"></script>
+[js]
 </template>
 
 <template id="uploadCsvInstruction">
@@ -554,12 +555,13 @@
 
                 var html = $('#htmlExportTemplate').html()
                     .replace('[mapFile]', loadedMapUrl)
+                    .replace('[js]', '');
                 $('#jsfiddleExport [name="html"]').val(html);
             });
 
             $('#saveMap').on('click', function() {
 
-                var javascript = '$(".mapcontainer").mapael(' + editor.getValue() + ');';
+                var javascript = '<script type="text/javascript">' + $(".mapcontainer").mapael(' + editor.getValue() + ') + '</script>';
 
                 var body = $('#htmlExportTemplate').html()
                     .replace('[mapFile]', loadedMapUrl)
