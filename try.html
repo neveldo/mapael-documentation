@@ -224,6 +224,7 @@
                         <input type="hidden" name="html" value="" />
                         <input type="hidden" name="js" value="" />
                         <input type="hidden" name="css" value="" />
+                        <input type="hidden" name="wrap" value="d" />
                         <input type="hidden" name="title" value="Mapael map">
                         <input type="submit" value="Export to JSFiddle" class="btn btn-primary" />
 
@@ -285,10 +286,6 @@
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js" charset="utf-8"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/jquery.mapael.min.js" charset="utf-8"></script>
         <script type="text/javascript" src="[mapFile]" charset="utf-8"></script>
-
-        <script type="text/javascript">
-[js]
-        </script>
 </template>
 
 <template id="uploadCsvInstruction">
@@ -553,10 +550,10 @@
                 $('#jsfiddleExport [name="css"]').val($('style.mapael').text());
 
                 var javascript = '$(".mapcontainer").mapael(' + editor.getValue() + ');';
+                $('#jsfiddleExport [name="js"]').val(javascript);
 
                 var html = $('#htmlExportTemplate').html()
                     .replace('[mapFile]', loadedMapUrl)
-                    .replace('[js]', javascript);
                 $('#jsfiddleExport [name="html"]').val(html);
             });
 
