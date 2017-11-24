@@ -470,14 +470,26 @@
     <p>Mapael allows you to trigger an event 'zoom' on the map container.</p>
 
     <pre class="brush: js;">$(".mapContainer").trigger("zoom", options);</pre>
-    <p>options (Object) : Zoom options. The point to focus on can be set by latitude and longitude or by x and y coordinates.</p>
+    <p>options (Object) : Zoom options. The point to focus on can be set by latitude and longitude, by x and y coordinates or with an area ID. The following options are available :</p>
     <ul>
-        <li>  <strong>level :</strong> (Integer or string) The level of the zoom between 0 and maxLevel. In order to zoom-in or zoom-out relatively to the current zoom level, you can set the level to a negative interger (eg : -5), or a string beginning by '+' (eg : '+5').</li>
+        <li>  <strong>animDuration :</strong> (Integer, default value : 0) The duration of the zoom animation</li>
+        <li>  <strong>level :</strong> (Integer or string) The level of the zoom between 0 and maxLevel. In order to zoom-in or zoom-out relatively to the current zoom level, you can set the level to a negative integer (eg : -5), or a string beginning by '+' (eg : '+5').</li>
+        <li>  <strong>fixedCenter :</strong> (Boolean) Set to true in order to preserve the position of x,y in the canvas when zoomed</li>
+    </ul>
+    &nbsp;
+    <ul>
         <li>  <strong>x :</strong> (Integer) x coordinate of the point to focus on</li>
         <li>  <strong>y :</strong> (Integer) y coordinate of the point to focus on</li>
+    </ul>
+    Or
+    <ul>
         <li>  <strong>latitude :</strong> (Float) latitude of the point to focus on</li>
         <li>  <strong>longitude :</strong> (Float) longitude of the point to focus on</li>
-        <li>  <strong>animDuration :</strong> (Int, default value : 0) The duration of the zoom animation</li>
+    </ul>
+    Or
+    <ul>
+        <li>  <strong>area :</strong> (String) area ID to focus on</li>
+        <li>  <strong>areaMargin :</strong> (Integer) margin (in pixels) around the area</li>
     </ul>
 
     <p>The current zoom data can be retrieved with the data from "zoomData" key :</p>
