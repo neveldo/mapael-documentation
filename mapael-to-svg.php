@@ -104,6 +104,7 @@ if (count($_FILES) > 0) {
                 <li><a href="/mapael/#api-reference">Documentation</a></li>
                 <li><a href="https://github.com/neveldo/mapael-maps" target="_blank">Additional maps</a></li>
                 <li><a href="create-map.php">Create your own map</a></li>
+                <li><a href="try.html">Try Mapael online</a></li>
                 <li><a href="https://twitter.com/VincentBroute" target="_blank"><img src="assets/img/twitter_logo.png" width="18px" height="15px" style="vertical-align:top;" /> Twitter</a></li>
                 <li><a href="https://github.com/neveldo/jQuery-Mapael" target="_blank"><img src="assets/img/github_logo.png" width="15px" height="15px" style="vertical-align:top;" /> Github</a></li>
             </ul>
