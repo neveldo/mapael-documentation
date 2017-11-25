@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Try jQuery Mapael online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="jQuery Mapael is a jQuery plugin based on raphael.js that allows you to display dynamic vector maps. ">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/mapael.css" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/styles/shCoreDefault.min.css"/>
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css"/>
+
+    <style type="text/css" class="mapael">
+        .container {
+            margin: auto;
+            width:100%;
+        }
+        .mapael .map {
+            background-color: #cddee0;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        /* For all zoom buttons */
+        .mapael .zoomButton {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            color: #000;
+            width: 15px;
+            height: 15px;
+            line-height: 15px;
+            text-align: center;
+            border-radius: 3px;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            font-weight: bold;
+            left: 10px;
+            -webkit-user-select: none;
+            -khtml-user-select : none;
+            -moz-user-select: none;
+            -o-user-select : none;
+            user-select: none;
+        }
+        /* Reset Zoom button first */
+        .mapael .zoomReset {
+            top: 10px;
+        }
+        /* Then Zoom In button */
+        .mapael .zoomIn {
+            top: 30px;
+        }
+        /* Then Zoom Out button */
+        .mapael .zoomOut {
+            top: 50px;
+        }
+        .mapael .mapTooltip {
+            position: absolute;
+            background-color: #474c4b;
+            moz-opacity: 0.70;
+            opacity: 0.70;
+            filter: alpha(opacity=70);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000;
+            max-width: 200px;
+            display: none;
+            color: #fff;
+        }
+    </style>
+
+    <style type="text/css">
+
+        body {
+            padding-bottom:0;
+        }
+
+        .mapcontainer {
+            height:70vh;
+            border:1px solid #ccc;
+            overflow-y:scroll;
+        }
+
+        #configuration { 
+            width:100%;
+            height:70vh;
+        }
+        /* @source : https://projects.lukehaas.me/css-loaders/ */
+        .loader,
+        .loader:after {
+          border-radius: 50%;
+          width: 10em;
+          height: 10em;
+        }
+        .loader {
+          font-size: 10px;
+          position: absolute;
+          top: 80px;
+          left: calc(50% - 5em);
+          z-index:1000;
+          display:none;
+
+          font-size: 10px;
+          text-indent: -9999em;
+          border-top: 1.1em solid rgba(0,87,155, 0.2);
+          border-right: 1.1em solid rgba(0,87,155, 0.2);
+          border-bottom: 1.1em solid rgba(0,87,155, 0.2);
+          border-left: 1.1em solid #00579b;
+          -webkit-transform: translateZ(0);
+          -ms-transform: translateZ(0);
+          transform: translateZ(0);
+          -webkit-animation: load8 1.1s infinite linear;
+          animation: load8 1.1s infinite linear;
+        }
+        @-webkit-keyframes load8 {
+          0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+          }
+          100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes load8 {
+          0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+          }
+          100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+          }
+        }
+
+        .tooltip-inner {
+            max-width:600px;
+            text-align:left;
+            font-size: 14px;
+        }
+    </style>
+
+</head>
+
+<body id="top">
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <h1><a href="#top">jQuery Mapael</a></h1>
+            <ul class="nav">
+                <li><a href="/mapael/#overview">Overview</a></li>
+                <li><a href="/mapael/#examples">Examples</a></li>
+                <li><a href="/mapael/#api-reference">Documentation</a></li>
+                <li><a href="https://github.com/neveldo/mapael-maps" target="_blank">Additional maps</a></li>
+                <li><a href="create-map.php">Create your own map</a></li>
+                <li><a href="try.html">Try Mapael online</a></li>
+                <li><a href="https://twitter.com/VincentBroute" target="_blank"><img src="assets/img/twitter_logo.png" width="18px" height="15px" style="vertical-align:top;" /> Twitter</a></li>
+                <li><a href="https://github.com/neveldo/jQuery-Mapael" target="_blank"><img src="assets/img/github_logo.png" width="15px" height="15px" style="vertical-align:top;" /> Github</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <h2 style="margin-bottom:10px;text-align:center;">Try jQuery Mapael online</h2>
+
+
+    <div class="row">
+
+        <!-- Map url / file / CSV pannel -->
+        <div class="col-sm-6">
+
+            <div class="form-group">
+
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label for="mapSelector">Map</label>
+                        <select class="form-control" id="mapSelector" name="mapSelector"></select>
+
+                        <p style="text-align:right;">
+                            
+                        </p>
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label for="mapUrl">Or paste map URL</label>
+                        <input class="form-control" type="text" id="mapUrl" name="mapUrl" placeholder="https://..." />
+                    </div>
+                    <div class="col-sm-4" class="form-group" id="uploadCsv">
+                        <label for="file">Plots or areas CSV data (optional)</label>
+                        <input id="file" type="file" style="display:inline;" />
+                    </div>
+
+                </div>
+                <p>You map is not available ? <b><a href="https://github.com/neveldo/mapael-maps">Contribute !</a></b></p>
+
+            </div>
+
+        </div>
+
+        <!-- Map extra info pannel -->
+        <div class="col-sm-6">
+            <div class="mapExtraInfo">
+                Hovered area ID : <span class="area">-</span>
+                <br />pageX : <span class="pageX">0</span>, pageY : <span class="pageY">0</span> - X : <span class="x">0</span>, Y : <span class="y">0</span>
+                <br /><label for="spotPoint">Spot a point on click</label> <input type="checkbox" class="spotPoint" id="spotPoint" name="spotPoint" />
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- Configuration pannel -->
+        <div class="col-sm-6">
+
+            <div class="form-group">
+                <div style="position:relative;">
+                    <div class="loader"></div>
+                    <div id="configuration"></div>
+                </div>
+
+                <div style="text-align:right;margin-top:5px;">
+                    <form method="post" action="http://jsfiddle.net/api/post/library/pure/" target="_blank" id="jsfiddleExport">
+
+                        <input type="hidden" name="html" value="" />
+                        <input type="hidden" name="js" value="" />
+                        <input type="hidden" name="css" value="" />
+                        <input type="hidden" name="wrap" value="d" />
+                        <input type="hidden" name="title" value="Mapael map">
+                        <input type="submit" value="Export to JSFiddle" class="btn btn-primary" />
+
+                        <a href="" class="btn btn-primary" download="map.html" id="saveMap">Save</a>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Preview pannel -->
+          <div class="col-sm-6">
+            <div class="mapcontainer">
+                <div class="map">
+                    <span>Alternative content for the map</span>
+                </div>
+                <div class="areaLegend"></div>
+                <div class="plotLegend"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" charset="utf-8" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.1/js/bootstrap.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/jquery.mapael.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js" charset="utf-8"></script>
+
+<template id="defaultConfiguration">
+{
+    "map": {
+        "name": "world_countries",
+        "zoom": {
+            "enabled": true,
+            "maxLevel": 10
+        }
+    }
+}
+</template>
+
+<template id="htmlExportTemplate">
+        <div class="mapcontainer">
+            <div class="map">
+                <span>Alternative content for the map</span>
+            </div>
+            <div class="areaLegend"></div>
+            <div class="plotLegend"></div>
+        </div>
+
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" charset="utf-8" charset="utf-8"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" charset="utf-8"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js" charset="utf-8"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/jquery.mapael.min.js" charset="utf-8"></script>
+        <script type="text/javascript" src="[mapFile]" charset="utf-8"></script>
+[js]
+</template>
+
+<template id="uploadCsvInstruction">
+    <p>Upload a CSV file that contains areas or plots to display on the map. The following column names are supported : 'id' (for areas), 'latitude' & 'longitude' (for plots), 'value', 'text' and 'tooltip'. Content sample :</p>
+
+    <p>
+    latitude,longitude,value,tooltip,text<br />
+    48.11416,-1.680833,15000,"Rennes city","Rennes"<br />
+    45.75888,4.8413888,25000,"Lyon city","lyon"<br />
+    48.86000,2.3444000,35000,"Paris city","Paris"
+    </p>
+</template>
+
+<script type="text/javascript">
+    $(function() {
+
+        // List of available maps
+        var maps = {
+            "world_countries": {
+                "url":"https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js",
+                loaded: true,
+                selected: true
+            },
+            "world_countries_with_antarctica": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/world/world_countries_with_antarctica.js"
+            },
+            "algeria_map": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/algeria/algeria.js"
+            },
+            "argentina": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/argentina/argentina.js"
+            },
+            "austria_districts": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/austria/austria_districts.js"
+            },
+            "belgium": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/belgium/belgium.js"
+            },
+            "canada": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/canada/canada.js"
+            },
+            "croatia": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/croatia/croatia.js"
+            },
+            "england_counties": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/england/england_counties.js"
+            },
+            "european_union": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/european_union/european_union.js"
+            },
+            "france_departments": {
+                "url":"https://rawgit.com/neveldo/jQuery-Mapael/master/js/maps/france_departments.js"
+            },
+            "france_departments_domtom": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/france/france_departments_domtom.js"
+            },
+            "france_regions_domtom": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/france/france_regions_domtom.js"
+            },
+            "france_regions": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/france/france_regions.js"
+            },
+            "france_regions_2016": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/france/france_regions_2016.js"
+            },
+            "france_regions_2016_domtom": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/france/france_regions_2016_domtom.js"
+            },
+            "germany": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/germany/germany.js"
+            },
+            "india_states": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/india/india_states.js"
+            },
+            "laos": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/laos/laos.js"
+            },
+            "mexico": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/mexico/mexico.js"
+            },
+            "netherlands": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/netherlands/netherlands_provinces.js"
+            },
+            "poland": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/poland/poland.js"
+            },
+            "scandinavia": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/scandinavia/scandinavia.js"
+            },
+            "sri_lanka": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/srilanka/sri_lanka.js"
+            },
+            "thailand": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/thailand/thailand.js"
+            },
+            "trinidad_and_tobago": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master//trinidad_and_tobago/trinidad_and_tobago.js"
+            },
+            "ukraine": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/ukraine/ukraine.js"
+            },
+            "united_kingdom": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/united_kingdom/united_kingdom.js"
+            },
+            "usa_states": {
+                "url":"https://rawgit.com/neveldo/jQuery-Mapael/master/js/maps/usa_states.js"
+            },
+            "wales_county": {
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/wales/wales_county.js"
+            }
+        };
+
+        /*
+        * Get JSON map configuration from string
+        * Use eval() in oder to allow comments and get rid from the strict syntax of JSON
+        * @param conf map config as string
+        * @param map conf as object
+        */
+        var getMapConfigFromString = function(conf) {
+            eval("var result = " + conf);
+
+            // Add functions to display hover area
+            result = $.extend(true, {}, result, {
+                'map' : {
+                    'defaultArea' : {
+                        'eventHandlers' : {
+                            'mouseenter' : function(e, id, mapElem, textElem) {
+                                $('.mapExtraInfo .area').text('"' + id + '"');
+                            },
+                            'mouseleave' : function(e, id, mapElem, textElem) {
+                                $('.mapExtraInfo .area').text('-');
+                            },
+                        }
+                    }
+                }
+            });
+
+            return result;
+        };
+
+        /*
+        * Replace the mapName within mapael configuration
+        * in the editor
+        * @param editor
+        * @param mapName
+        */
+        var updateMapValue = function(editor, mapName) {
+            var configuration = editor.getValue();
+
+            configuration = configuration.replace(
+                /["']?name["']?\s*:\s*["']?([A-Za-z0-9-_]+)["']?/g, 
+                '"name" : "' + mapName + '"'
+            );
+            editor.setValue(configuration, 1);
+        };
+
+        /**
+        * Create and init ace editor for mapael configuration
+        * @return ace editor
+        */
+        var initEditor = function() {
+            // Init configuration input
+            var editor = ace.edit("configuration");
+            editor.setTheme("ace/theme/monokai");
+            editor.getSession().setMode("ace/mode/javascript");
+            editor.$blockScrolling = Infinity; // Disable warnings
+            editor.getSession().setUseWorker(false); // Disable syntax check
+            editor.setValue($('#defaultConfiguration').html(), 1);
+
+            // Update map on editor change
+            editor.getSession().on('change', function() {
+                if (editor.getValue() === '') {
+                    return;
+                }
+
+                try {
+                    $(".mapcontainer").mapael(
+                        getMapConfigFromString(editor.getValue())
+                    );
+                } catch (e) {
+                    console.log(e);
+                }
+            });
+
+            return editor;
+        };
+
+        /*
+        * Init map select input
+        * @param $mapSelector
+        * @param editor
+        */
+        var initMapSelector = function($mapSelector, editor) {
+            for (var mapName in maps) {
+
+                $mapSelector.append($('<option>', {
+                    value: mapName,
+                    text: mapName,
+                    selected: (maps[mapName].selected === true)
+                }));
+            }
+
+            $('label[for="mapSelector"]').on('click', function() {
+                $mapSelector.select2('open');
+            });
+
+            $mapSelector
+                .select2()
+                .on('change', function() {
+                    var mapValue = $mapSelector.val();
+                    if (typeof maps[mapValue] === 'undefined') {
+                        return;
+                    }
+
+                    $('.loader').show();
+
+                    if (maps[mapValue].loaded !== true) {
+                        $.getScript(maps[mapValue]["url"], function() {
+                            maps[mapValue].loaded = true;
+                            updateMapValue(editor, mapValue);
+                            loadedMapUrl = maps[mapValue]["url"];
+                            $('.loader').hide();
+                        });
+                    } else {
+                        updateMapValue(editor, mapValue);
+                        loadedMapUrl = maps[mapValue]["url"];
+                        $('.loader').hide();
+                    }
+                });
+        };
+
+        /*
+        * Init map URL input
+        * @param editor
+        * @param editor
+        */
+        var initMapUrl = function($mapUrl, editor) {
+            $mapUrl
+                .on('input', function() {
+                    var url = $(this).val();
+
+                    $('.loader').show();
+                    $.getScript(url, function() {
+                        updateMapValue(
+                            editor,
+                            url.substring(url.lastIndexOf("/") + 1, url.lastIndexOf(".js"))
+                        );
+                        loadedMapUrl = url;
+                        $('.loader').hide();
+                    });
+                });
+        };
+
+        /*
+        * Init JSFiddle export and save
+        * @param editor
+        * @param editor
+        */
+        var initExport = function(editor) {
+            $('#jsfiddleExport [type="submit"]').on('click', function() {
+
+                $('#jsfiddleExport [name="css"]').val($('style.mapael').text());
+
+                var javascript = '$(".mapcontainer").mapael(' + editor.getValue() + ');';
+                $('#jsfiddleExport [name="js"]').val(javascript);
+
+                var html = $('#htmlExportTemplate').html()
+                    .replace('[mapFile]', loadedMapUrl)
+                    .replace('[js]', '');
+                $('#jsfiddleExport [name="html"]').val(html);
+            });
+
+            $('#saveMap').on('click', function() {
+
+                var javascript = '<script type="text/javascript">\n' + '$(".mapcontainer").mapael(' + editor.getValue() + ')' + '\n</scr' + 'ipt>';
+
+                var body = $('#htmlExportTemplate').html()
+                    .replace('[mapFile]', loadedMapUrl)
+                    .replace('[js]', javascript);
+
+                var content = 
+`<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <style type="text/css">
+[style]
+        </style>
+    </head>
+    <body>
+[body]
+    </body>
+    </html>`;
+
+                content = content
+                    .replace('[style]', $('style.mapael').text())
+                    .replace('[body]', body);
+
+                $('#saveMap').attr('href', "data:application/octet-stream," + encodeURIComponent(content));
+            });
+
+        }
+
+        /**
+        * Convert CSV to JSON object
+        * @source https://gist.github.com/iwek/7154578
+        * @param csv
+        */
+        var csvToJSON = function(csv) {
+            var lines = csv.split("\n");
+            var result = [];
+            var sep = (lines[0].indexOf(';') > -1) ? ';' : ',';
+            var headers = lines[0].split(sep);
+
+            for(var i = 1; i < lines.length; i++) {
+
+                if (currentline === "") {
+                      continue;
+                }
+
+                var obj = {};
+                var currentline = lines[i].split(sep);
+
+                for(var j = 0; j < headers.length; j++) {
+                    if (typeof currentline[j] === 'undefined') continue;
+                    obj[headers[j]] = currentline[j].replace(/^['"]?|['"]?$/g, '');
+                }
+
+                result.push(obj);
+            }
+
+            return result;
+        }
+
+        /**
+        * Handle CSV data to generate
+        * plots or areas
+        */
+        var initLoadCSVFile = function() {
+            var $fileInput = $('#file');
+
+            $fileInput.on('change', function() {
+
+                var reader = new FileReader();
+
+                reader.addEventListener('load', function() {
+                    var data = csvToJSON(reader.result);
+                    var result = {};
+
+                    for (var i in data) {
+                        var elemId = (typeof data[i]['id'] !== 'undefined') ? data[i]['id'] : "plot-" + i;
+
+                        result[elemId] = {};
+
+                        if ((typeof data[i]['latitude'] !== 'undefined')) {
+                            result[elemId]['latitude'] = data[i]['latitude'];
+                        }
+
+                        if ((typeof data[i]['longitude'] !== 'undefined')) {
+                            result[elemId]['longitude'] = data[i]['longitude'];
+                        }
+
+                        if ((typeof data[i]['value'] !== 'undefined')) {
+                            result[elemId]['value'] = data[i]['value'];
+                        }
+
+                        if ((typeof data[i]['text'] !== 'undefined')) {
+                            result[elemId]['text'] = {"content": data[i]['text']};
+                        }
+
+                        if ((typeof data[i]['tooltip'] !== 'undefined')) {
+                            result[elemId]['tooltip'] = {"content": data[i]['tooltip']};
+                        }
+                    }
+
+                    var elemType = (typeof data[0]['id'] !== 'undefined') ? 'areas' : 'plots';
+                    var configuration = editor.getValue();
+
+                    configuration = configuration.substring(0, configuration.lastIndexOf('}') - 1) + ", \"" + elemType + "\" : " + JSON.stringify(result, null, 4) + "\n}";
+
+                    editor.setValue(configuration, 1);
+
+                });
+
+                reader.readAsText($fileInput[0].files[0]);
+
+            });
+        }
+
+        /**
+        * Display map extra info and allow user to spot
+        * some position by clicking on the map
+        *
+        */
+        var currentReticle = [];
+        var initMapExtraInfo = function() {
+            // 
+            $(".mapcontainer")
+                .on('mousemove', function(e) {
+
+                    if($('.spotPoint').is(":checked")) return;
+
+                    var $this = $(this);
+
+                    // mapPagePositionToXY() allows to get the x,y coordinates 
+                    // on the map from a x,y coordinates on the page
+                    var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+
+                    $('.mapExtraInfo .pageX').text(e.pageX);
+                    $('.mapExtraInfo .pageY').text(e.pageY);
+                    $('.mapExtraInfo .x').text(Math.round(1000 * coords.x) / 1000);
+                    $('.mapExtraInfo .y').text(Math.round(1000 * coords.y) / 1000);
+                })
+                .on('click', function(e) {
+                    if (!$('.spotPoint').is(":checked")) return;
+
+                    var $this = $(this);
+                    var coords = $this.data('mapael').mapPagePositionToXY(e.pageX, e.pageY);
+                    var paper = $(".mapcontainer").data("mapael").paper;
+
+                    $('.mapExtraInfo .pageX').text(e.pageX);
+                    $('.mapExtraInfo .pageY').text(e.pageY);
+                    $('.mapExtraInfo .x').text(Math.round(1000 * coords.x) / 1000);
+                    $('.mapExtraInfo .y').text(Math.round(1000 * coords.y) / 1000);
+
+                    for (var i = 0; i < currentReticle.length; i++) {
+                        currentReticle[i].remove();
+                    }
+
+                    currentReticle = [
+                        paper.path("M" + (coords.x - 25) + "," +  coords.y + " " + (coords.x + 25) + "," +  coords.y + "")
+                            .attr({'stroke':'red', 'stroke-width':0.5}),
+                        paper.path("M" + coords.x + "," +  (coords.y - 25) + " " + coords.x + "," +  (coords.y + 25) + "")
+                            .attr({'stroke':'red', 'stroke-width':0.5})
+                    ];
+                });
+
+            $('.spotPoint').on('click', function() {
+                var $this = $(this);
+
+                if (!$this.is(":checked")) {
+                    for (var i = 0; i < currentReticle.length; i++) {
+                        currentReticle[i].remove();
+                    }
+                }
+            });
+        }
+
+        // Current loaded map
+        var loadedMapUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js';
+
+        // Init map ace editor
+        var editor = initEditor();
+
+        // Init map inputs
+        initMapSelector($('#mapSelector'), editor);
+        initMapUrl($('#mapUrl'), editor);
+
+        // Init JSFiddle Export and save
+        initExport(editor);
+        
+        // Initialize map preview with the default configuration
+        $(".mapcontainer").mapael(
+            getMapConfigFromString($('#defaultConfiguration').html())
+        );
+
+        initLoadCSVFile();
+
+        initMapExtraInfo();
+
+        $('#uploadCsv').tooltip({
+            "html":true,
+            "placement":"bottom",
+            "title":$('#uploadCsvInstruction').html()
+        });
+    });
+
+</script>
+</body>
+</html>
