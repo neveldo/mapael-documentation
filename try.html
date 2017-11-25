@@ -259,7 +259,7 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" charset="utf-8"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js" charset="utf-8"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/jquery.mapael.min.js" charset="utf-8"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://rawgit.com/neveldo/mapael-maps/master/world/world_countries.js" charset="utf-8"></script>
 
 <template id="defaultConfiguration">
 {
@@ -307,7 +307,7 @@
         // List of available maps
         var maps = {
             "world_countries": {
-                "url":"https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js",
+                "url":"https://rawgit.com/neveldo/mapael-maps/master/world/world_countries.js",
                 loaded: true,
                 selected: true
             },
@@ -737,7 +737,7 @@
         }
 
         // Current loaded map
-        var loadedMapUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jquery-mapael/2.1.0/js/maps/world_countries.min.js';
+        var loadedMapUrl = 'https://rawgit.com/neveldo/mapael-maps/master/world/world_countries.js';
 
         // Init map ace editor
         var editor = initEditor();
